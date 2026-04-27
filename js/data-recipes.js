@@ -1,5 +1,5 @@
 // DIY Eco-Friendly Cleaning Recipes - Traditional Japanese methods + modern eco recipes
-export const cleaningRecipes = [
+const cleaningRecipes = [
     {
         id: "recipe_1",
         name: "Rice Water Counter Cleaner",
@@ -258,7 +258,7 @@ export const cleaningRecipes = [
     }
 ];
 
-export const recipeFilterTags = [
+const recipeFilterTags = [
     { value: "all", label: "All" },
     { value: "multi-purpose", label: "Multi-Purpose" },
     { value: "cat-safe", label: "🐱 Cat-Safe" },

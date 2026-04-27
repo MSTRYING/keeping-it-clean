@@ -1,5 +1,5 @@
 // Cleaning Tasks Data - Calibrated for 4 people + 2 cats + 4 bedrooms + 4 bathrooms
-export const cleaningTasks = [
+const cleaningTasks = [
     // DAILY TASKS
     { id: "daily_1", name: "Vacuum/Sweep High-Traffic Areas", icon: "🧹", frequency: "daily", note: "Entryways, kitchen, hallways - heavy foot traffic with 4 people" },
     { id: "daily_2", name: "Wipe Kitchen Counters & Stove", icon: "🍳", frequency: "daily", note: "After each major use - family of 4 means frequent cooking" },
@@ -62,7 +62,7 @@ export const cleaningTasks = [
     { id: "annual_6", name: "Clean Range Hood Ductwork", icon: "💨", frequency: "annual", note: "Grease buildup in ventilation - fire safety and efficiency" }
 ];
 
-export const frequencies = [
+const frequencies = [
     { value: "daily", label: "Daily" },
     { value: "weekly", label: "Weekly" },
     { value: "bi-weekly", label: "Bi-Weekly" },
