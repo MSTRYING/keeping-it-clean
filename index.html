@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F2EB">
+    <meta name="description" content="Household cleaning checklist and eco-friendly DIY recipes — 片付け Katazuke">
+    <title>Keeping it Clean · 片付け</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧹</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>Keeping it Clean</h1>
+            <p class="subtitle">片付け · Katazuke</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="tab-content" role="main">
+            <!-- CHECKLIST VIEW -->
+            <div v-if="activeTab === 'checklist'">
+                <!-- Frequency Filter Chips -->
+                <div class="frequency-filters" role="group" aria-label="Filter by frequency">
+                    <button
+                        v-for="freq in frequencies"
+                        :key="freq.value"
+                        class="freq-chip"
+                        :class="{ active: activeFilters.includes(freq.value) }"
+                        @click="toggleFilter(freq.value)"
+                    >
+                        {{ freq.label }}
+                    </button>
+                </div>
+
+                <!-- Progress Cards -->
+                <div class="progress-section">
+                    <div
+                        v-for="freq in frequencies"
+                        :key="'prog-' + freq.value"
+                        class="progress-card"
+                        v-show="activeFilters.includes(freq.value)"
+                    >
+                        <div class="freq-label">{{ freq.label }}</div>
+                        <div class="progress-bar-track">
+                            <div
+                                class="progress-bar-fill"
+                                :style="{ width: getProgressPercent(freq.value) + '%' }"
+                            ></div>
+                        </div>
+                        <div class="progress-text" :class="{ done: isAllDone(freq.value) }">
+                            {{ getCompletedCount(freq.value) }} / {{ getFilteredTaskCount(freq.value) }} tasks done
+                            <span v-if="isAllDone(freq.value)">✓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task Groups by Frequency -->
+                <div
+                    v-for="freq in frequencies"
+                    :key="'group-' + freq.value"
+                    class="task-group"
+                    v-show="activeFilters.includes(freq.value)"
+                >
+                    <div class="task-group-title">{{ freq.label }} Tasks</div>
+
+                    <div
+                        v-for="task in getTasksByFrequency(freq.value)"
+                        :key="task.id"
+                        class="task-item"
+                        :class="{ completed: taskStates[task.id]?.completed }"
+                        @click="toggleTask(task.id)"
+                        role="checkbox"
+                        :aria-checked="taskStates[task.id]?.completed || false"
+                        tabindex="0"
+                    >
+                        <div class="task-checkbox">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <span class="task-icon">{{ task.icon }}</span>
+                        <div class="task-info">
+                            <div class="task-name">{{ task.name }}</div>
+                            <div class="task-note" v-if="task.note">{{ task.note }}</div>
+                        </div>
+                        <span class="freq-badge" :class="task.frequency">{{ task.frequency }}</span>
+                    </div>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="reset-section">
+                    <button class="btn-reset" @click="confirmReset">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        Reset Today's Progress
+                    </button>
+                </div>
+            </div>
+
+            <!-- RECIPES VIEW -->
+            <div v-if="activeTab === 'recipes'">
+                <!-- Recipe Filter Chips -->
+                <div class="recipe-filters frequency-filters" role="group" aria-label="Filter recipes">
+                    <button
+                        v-for="tag in recipeTags"
+                        :key="tag.value"
+                        class="freq-chip"
+                        :class="{ active: activeRecipeFilters.includes(tag.value) }"
+                        @click="toggleRecipeFilter(tag.value)"
+                    >
+                        {{ tag.label }}
+                    </button>
+                </div>
+
+                <!-- Recipe Cards -->
+                <div v-if="filteredRecipes.length">
+                    <div
+                        v-for="recipe in filteredRecipes"
+                        :key="recipe.id"
+                        class="recipe-card"
+                    >
+                        <div class="recipe-header" @click="toggleRecipe(recipe.id)">
+                            <div class="recipe-emoji">{{ recipe.emoji }}</div>
+                            <div class="recipe-title-area">
+                                <div class="recipe-name">{{ recipe.name }}</div>
+                                <div class="recipe-jp-name">{{ recipe.jpName || '' }}</div>
+                            </div>
+                            <button
+                                class="recipe-fav-btn"
+                                :class="{ active: isFavorite(recipe.id) }"
+                                @click.stop="toggleFav(recipe.id)"
+                                aria-label="Toggle favorite"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Expanded Detail -->
+                        <div class="recipe-detail" v-if="expandedRecipe === recipe.id">
+                            <div class="recipe-tags">
+                                <span
+                                    v-for="tag in (recipe.tags || [])"
+                                    :key="tag"
+                                    class="recipe-tag"
+                                    :class="{ 'pet-safe': tag === 'cat-safe' }"
+                                >
+                                    {{ tag }}
+                                </span>
+                            </div>
+
+                            <div class="recipe-section-title">Ingredients</div>
+                            <ul class="recipe-ingredients">
+                                <li v-for="(ing, i) in recipe.ingredients" :key="i">{{ ing }}</li>
+                            </ul>
+
+                            <div class="recipe-section-title">Instructions</div>
+                            <ol class="recipe-steps">
+                                <li v-for="(step, i) in recipe.steps" :key="i">{{ step }}</li>
+                            </ol>
+
+                            <div class="recipe-note-box" v-if="recipe.note">
+                                <strong>Note:</strong> {{ recipe.note }}
+                            </div>
+
+                            <!-- Delete button for custom recipes -->
+                            <button
+                                v-if="recipe.isCustom"
+                                class="btn-reset"
+                                style="margin-top: var(--space-md); width: 100%; justify-content: center;"
+                                @click.stop="deleteCustomRecipe(recipe.id)"
+                            >
+                                🗑️ Remove Recipe
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="empty-state">
+                    <div class="empty-state-icon">🌿</div>
+                    <p class="empty-state-text">No recipes match your filters.<br>Try selecting different tags above.</p>
+                </div>
+
+                <!-- FAB: Add Recipe -->
+                <button class="fab" @click="showAddModal = true" aria-label="Add new recipe">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+
+                <!-- Add Recipe Modal -->
+                <div class="modal-overlay" v-if="showAddModal" @click.self="showAddModal = false">
+                    <div class="modal-sheet">
+                        <div class="modal-handle"></div>
+                        <h2 class="modal-title">Add Your Own Recipe</h2>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recipe-name">Recipe Name</label>
+                            <input id="recipe-name" class="form-input" v-model="newRecipe.name" placeholder="e.g. Magic All-Purpose Spray">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recipe-jp">Japanese Name (optional)</label>
+                            <input id="recipe-jp" class="form-input" v-model="newRecipe.jpName" placeholder="e.g. マジッククリーナー">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recipe-emoji">Emoji Icon</label>
+                            <input id="recipe-emoji" class="form-input" v-model="newRecipe.emoji" placeholder="🧴" maxlength="4">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recipe-ingredients">Ingredients (one per line)</label>
+                            <textarea id="recipe-ingredients" class="form-textarea" v-model="newRecipe.ingredientsStr" placeholder="1 cup water&#10;2 tbsp vinegar&#10;1 tsp baking soda"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recipe-steps">Instructions (one step per line)</label>
+                            <textarea id="recipe-steps" class="form-textarea" v-model="newRecipe.stepsStr" placeholder="Mix water and vinegar in a spray bottle&#10;Add baking soda right before use&#10;Spray and wipe surface"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recipe-tags">Tags (comma-separated)</label>
+                            <input id="recipe-tags" class="form-input" v-model="newRecipe.tagsStr" placeholder="multi-purpose, cat-safe, kitchen">
+                        </div>
+
+                        <button class="btn-primary" @click="saveNewRecipe">Save Recipe</button>
+                        <button class="btn-secondary" @click="showAddModal = false">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notification -->
+        <transition name="toast">
+            <div v-if="toastMessage" class="toast">{{ toastMessage }}</div>
+        </transition>
+
+        <!-- Bottom Tab Bar -->
+        <nav class="tab-bar" role="navigation" aria-label="Main navigation">
+            <button
+                class="tab-item"
+                :class="{ active: activeTab === 'checklist' }"
+                @click="activeTab = 'checklist'"
+                aria-label="Cleaning Checklist"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"></path>
+                    <path d="M8 6v14c0 1.1-.7 2-2 2h0c-1.3 0-2-.9-2-2V6"></path>
+                    <path d="M15 6v14c0 1.1.7 2 2 2h0c1.3 0 2-.9 2-2V6"></path>
+                    <path d="M8 10h.01"></path>
+                    <path d="M15 10h.01"></path>
+                    <path d="M8 14h.01"></path>
+                </svg>
+                <span>Checklist</span>
+            </button>
+
+            <button
+                class="tab-item"
+                :class="{ active: activeTab === 'recipes' }"
+                @click="activeTab = 'recipes'"
+                aria-label="DIY Recipes"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 20A7 7 0 0 1 9.8 6.9C10.1 5.3 11.3 4 13 4c1.7 0 2.9 1.3 3.2 2.9A7 7 0 0 1 11 20z"></path>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                </svg>
+                <!-- Replacing with a leaf icon -->
+                <span>Recipes</span>
+            </button>
+        </nav>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
