@@ -60,4 +60,4 @@ const App = defineComponent({
 });
 
 const app = createApp(App);
-app.mount('#root');
+app.mount('#app');
