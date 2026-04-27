@@ -1,0 +1,7 @@
+{
+  "build_type": "workflow",
+  "source": {
+    "branch": "master",
+    "path": "/"
+  }
+}
