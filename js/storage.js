@@ -34,17 +34,48 @@ function saveTaskState(taskId, state) {
 function resetTodayTasks(dailyTaskIds) {
   const tasks = loadTasks();
   if (dailyTaskIds) {
-    // Only reset tasks whose IDs are in the daily list
     for (const id of dailyTaskIds) {
       if (tasks[id]) tasks[id].completed = false;
     }
   } else {
-    // Fallback: reset all completed tasks
     for (const id in tasks) {
       tasks[id].completed = false;
     }
   }
   _set('tasks', tasks);
+}
+
+// --- User Tasks (Add/Edit/Delete) ---
+function loadUserTasks() {
+  const raw = _get('user-tasks');
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch(e) { return []; }
+}
+
+function saveUserTask(task) {
+  const tasks = loadUserTasks();
+  const idx = tasks.findIndex(t => t.id === task.id);
+  if (idx > -1) {
+    tasks[idx] = task;
+  } else {
+    tasks.push(task);
+  }
+  _set('user-tasks', tasks);
+}
+
+function deleteUserTask(id) {
+  let tasks = loadUserTasks();
+  tasks = tasks.filter(t => t.id !== id);
+  _set('user-tasks', tasks);
+}
+
+function updateUserTask(id, updates) {
+  const tasks = loadUserTasks();
+  const idx = tasks.findIndex(t => t.id === id);
+  if (idx > -1) {
+    tasks[idx] = { ...tasks[idx], ...updates };
+    _set('user-tasks', tasks);
+  }
 }
 
 // --- Custom Recipes ---
