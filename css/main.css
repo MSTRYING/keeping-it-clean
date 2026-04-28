@@ -261,6 +261,155 @@
 .freq-badge.quarterly { background: color-mix(in srgb, var(--color-freq-quarterly) 15%, transparent); color: var(--color-freq-quarterly); }
 .freq-badge.annual { background: color-mix(in srgb, var(--color-freq-annual) 15%, transparent); color: var(--color-freq-annual); }
 
+/* --- Task ETA --- */
+.task-eta {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* --- Task Timer Button --- */
+.task-timer-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--duration-fast) var(--ease-out);
+  padding: 0;
+}
+
+.task-timer-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.task-timer-btn.active {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+.task-timer-btn.active svg {
+  animation: timerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* --- Task Recipe Link --- */
+.task-recipe-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--color-accent);
+  padding: 4px var(--space-sm);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.task-recipe-link:hover {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+.task-recipe-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- Task Action Buttons (Edit/Delete) --- */
+.task-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.task-action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--duration-fast) var(--ease-out);
+  padding: 0;
+}
+
+.task-action-btn.edit-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
+}
+
+.task-action-btn.delete-btn:hover {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  color: var(--color-danger);
+}
+
+/* --- Global Timer Bar --- */
+.timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 70%, white));
+  color: white;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-elevated);
+  animation: slideDown var(--duration-normal) var(--ease-out);
+}
+
+.timer-bar-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.timer-bar-time {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* --- Add Task Button --- */
+.add-task-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 2px dashed var(--color-bg-alt);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: all var(--duration-fast) var(--ease-out);
+  margin-bottom: var(--space-sm);
+}
+
+.add-task-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+}
+
+.add-task-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* --- Reset Button --- */
 .reset-section {
   padding: var(--space-lg) 0;

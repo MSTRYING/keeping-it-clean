@@ -121,3 +121,124 @@ function loadLastVisit() {
 function saveLastVisit(dateStr) {
   try { localStorage.setItem(PREFIX + 'last-visit', dateStr); } catch(e) {}
 }
+
+// --- Task Timer ---
+function loadActiveTimer() {
+  const raw = _get('active-timer');
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch(e) { return null; }
+}
+
+function saveActiveTimer(timer) {
+  _set('active-timer', timer);
+}
+
+function clearActiveTimer() {
+  _remove('active-timer');
+}
+
+// --- Streak Tracking ---
+function loadStreak() {
+  const raw = _get('streak');
+  if (!raw) return { current: 0, best: 0, lastDate: null };
+  try { return JSON.parse(raw); } catch(e) { return { current: 0, best: 0, lastDate: null }; }
+}
+
+function updateStreak() {
+  const streak = loadStreak();
+  const t = today();
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (streak.lastDate === t) return streak;
+  if (streak.lastDate === yesterday) {
+    streak.current++;
+  } else if (streak.lastDate !== t && streak.lastDate !== yesterday) {
+    streak.current = 1;
+  }
+  streak.lastDate = t;
+  streak.best = Math.max(streak.best, streak.current);
+  _set('streak', streak);
+  return streak;
+}
+
+// --- Completion Calendar ---
+function loadCalendar() {
+  const raw = _get('calendar');
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch(e) { return {}; }
+}
+
+function recordCalendarDay(date, tasksCompleted, tasksTotal) {
+  const cal = loadCalendar();
+  cal[date] = { completed: tasksCompleted, total: tasksTotal };
+  _set('calendar', cal);
+}
+
+// --- Achievements ---
+function loadAchievements() {
+  const raw = _get('achievements');
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch(e) { return []; }
+}
+
+function unlockAchievement(id) {
+  const achs = loadAchievements();
+  if (!achs.includes(id)) {
+    achs.push(id);
+    _set('achievements', achs);
+    return true;
+  }
+  return false;
+}
+
+// --- Dark Mode Preference ---
+function loadDarkMode() {
+  const raw = _get('dark-mode');
+  if (raw === null) return 'auto';
+  try { return JSON.parse(raw); } catch(e) { return 'auto'; }
+}
+
+function saveDarkMode(pref) {
+  _set('dark-mode', pref);
+}
+
+// --- Sound Preference ---
+function loadSoundEnabled() {
+  const raw = _get('sound');
+  if (raw === null) return true;
+  try { return JSON.parse(raw); } catch(e) { return true; }
+}
+
+function saveSoundEnabled(val) {
+  _set('sound', val);
+}
+
+// --- Export / Import ---
+function exportAllData() {
+  return {
+    version: 1,
+    exported: new Date().toISOString(),
+    tasks: loadTasks(),
+    userTasks: loadUserTasks(),
+    customRecipes: loadCustomRecipes(),
+    favorites: loadFavorites(),
+    streak: loadStreak(),
+    calendar: loadCalendar(),
+    achievements: loadAchievements(),
+    darkMode: loadDarkMode(),
+    sound: loadSoundEnabled()
+  };
+}
+
+function importAllData(data) {
+  if (!data || !data.version) return false;
+  if (data.tasks) _set('tasks', data.tasks);
+  if (data.userTasks) _set('user-tasks', data.userTasks);
+  if (data.customRecipes) _set('custom-recipes', data.customRecipes);
+  if (data.favorites) _set('favorites', data.favorites);
+  if (data.streak) _set('streak', data.streak);
+  if (data.calendar) _set('calendar', data.calendar);
+  if (data.achievements) _set('achievements', data.achievements);
+  if (data.darkMode !== undefined) _set('dark-mode', data.darkMode);
+  if (data.sound !== undefined) _set('sound', data.sound);
+  return true;
+}

@@ -17,6 +17,10 @@
   let toastMessage = '';
   let toastVisible = false;
 
+  // --- Timer State ---
+  let activeTimer = null; // { taskId, startTime (ms), elapsed (ms) }
+  let timerInterval = null;
+
   // --- DOM Helpers ---
   const $ = (sel, parent = document) => parent.querySelector(sel);
   const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
@@ -132,6 +136,74 @@
   }
   function recipeLinkIcon() {
     return svgIcon({ viewBox: '0 0 24 24', width: '16', height: '16', fill: 'none', stroke: 'var(--color-accent)', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [svgPath('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'), svgPolyline('14 2 14 8 20 8'), svgLine('16','13','8','13'), svgLine('16','17','8','17')]);
+  }
+  function timerIcon(active) {
+    return svgIcon({ viewBox: '0 0 24 24', width: '18', height: '18', fill: 'none', stroke: active ? 'var(--color-accent)' : 'var(--color-text-muted)', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [svgPath('M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z'), svgPath('M12 6v6l4 2')]);
+  }
+  function playIcon() {
+    return svgIcon({ viewBox: '0 0 24 24', width: '16', height: '16', fill: 'var(--color-accent)', stroke: 'none' }, [svgPath('M8 5v14l11-7z')]);
+  }
+  function pauseIcon() {
+    return svgIcon({ viewBox: '0 0 24 24', width: '16', height: '16', fill: 'var(--color-accent)', stroke: 'none' }, [svgPath('M6 4h4v16H6zM14 4h4v16h-4z')]);
+  }
+
+  // --- Timer Helpers ---
+  function formatTime(ms) {
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
+
+  function getTimerElapsed() {
+    if (!activeTimer) return 0;
+    return activeTimer.elapsed + (Date.now() - activeTimer.lastTick);
+  }
+
+  function startTimer(taskId) {
+    const saved = loadActiveTimer();
+    if (saved && saved.taskId === taskId) {
+      // Resume
+      activeTimer = { taskId: saved.taskId, startTime: saved.startTime, elapsed: saved.elapsed + (Date.now() - saved.lastTick), lastTick: Date.now() };
+    } else {
+      // New
+      activeTimer = { taskId, startTime: Date.now(), elapsed: 0, lastTick: Date.now() };
+    }
+    saveActiveTimer(activeTimer);
+    if (!timerInterval) {
+      timerInterval = setInterval(() => {
+        if (activeTimer) {
+          activeTimer.lastTick = Date.now();
+          saveActiveTimer(activeTimer);
+          const timerDisplay = $('#timer-display');
+          if (timerDisplay) {
+            timerDisplay.textContent = formatTime(getTimerElapsed());
+          }
+        }
+      }, 1000);
+    }
+  }
+
+  function stopTimer() {
+    if (activeTimer) {
+      activeTimer.elapsed += Date.now() - activeTimer.lastTick;
+      activeTimer.lastTick = Date.now();
+      saveActiveTimer(activeTimer);
+    }
+    activeTimer = null;
+    clearActiveTimer();
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function toggleTimer(taskId) {
+    if (activeTimer && activeTimer.taskId === taskId) {
+      stopTimer();
+    } else {
+      startTimer(taskId);
+    }
+    render();
   }
 
   // --- Toast ---
@@ -256,6 +328,17 @@
       el('p', { class: 'subtitle' }, ['片付け · Katazuke'])
     ]));
 
+    // Global Timer Display (if timer is running)
+    if (activeTimer) {
+      const timerBar = el('div', { class: 'timer-bar' });
+      const timerTaskName = getAllTasks().find(t => t.id === activeTimer.taskId);
+      timerBar.appendChild(el('div', { class: 'timer-bar-info' }, [
+        el('span', { class: 'timer-bar-task' }, [timerTaskName ? timerTaskName.icon + ' ' + timerTaskName.name : 'Timer running...'])
+      ]));
+      timerBar.appendChild(el('div', { class: 'timer-bar-time', id: 'timer-display' }, [formatTime(getTimerElapsed())]));
+      container.appendChild(timerBar);
+    }
+
     // Frequency filter chips
     const freqContainer = el('div', { class: 'frequency-filters' });
     freqContainer.appendChild(el('button', {
@@ -342,9 +425,20 @@
         const info = el('div', { class: 'task-info' });
         info.appendChild(el('div', { class: 'task-name' }, [task.name]));
         if (task.note) info.appendChild(el('div', { class: 'task-note' }, [task.note]));
+        // Estimated time
+        if (task.estimatedTime) {
+          info.appendChild(el('div', { class: 'task-eta' }, ['⏱ ' + task.estimatedTime + ' min']));
+        }
         item.appendChild(info);
         // Freq badge
         item.appendChild(el('span', { class: ['freq-badge', task.frequency] }, [task.frequency]));
+        // Timer button
+        const isTimerActive = activeTimer && activeTimer.taskId === task.id;
+        item.appendChild(el('button', {
+          class: ['task-timer-btn', { active: isTimerActive }],
+          title: isTimerActive ? 'Stop timer' : 'Start timer',
+          onClick: (e) => { e.stopPropagation(); toggleTimer(task.id); }
+        }, [isTimerActive ? pauseIcon() : playIcon()]));
 
         // Recipe recommendation link
         if (recipe) {
@@ -662,6 +756,12 @@
   // --- Init ---
   function init() {
     checkDailyReset();
+    // Restore active timer from storage
+    const savedTimer = loadActiveTimer();
+    if (savedTimer) {
+      activeTimer = savedTimer;
+      startTimer(savedTimer.taskId);
+    }
     render();
   }
 
