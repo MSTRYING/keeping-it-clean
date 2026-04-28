@@ -23,8 +23,26 @@
     const element = document.createElement(tag);
     for (const [key, val] of Object.entries(attrs)) {
       if (key === 'class') {
-        if (Array.isArray(val)) element.className = val.filter(Boolean).join(' ');
-        else element.className = val;
+        // Support: string, array of strings, array with conditional objects like ['btn', { active: true }]
+        let classes = [];
+        if (typeof val === 'string') {
+          classes = val.split(/\s+/).filter(Boolean);
+        } else if (Array.isArray(val)) {
+          for (const item of val) {
+            if (typeof item === 'string' && item) {
+              classes.push(...item.split(/\s+/));
+            } else if (typeof item === 'object' && item !== null) {
+              for (const [c, v] of Object.entries(item)) {
+                if (v) classes.push(c);
+              }
+            }
+          }
+        } else if (typeof val === 'object' && val !== null) {
+          for (const [c, v] of Object.entries(val)) {
+            if (v) classes.push(c);
+          }
+        }
+        element.className = classes.join(' ');
       } else if (key === 'dataset') {
         Object.assign(element.dataset, val);
       } else if (key.startsWith('on') && typeof val === 'function') {
