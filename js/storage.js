@@ -31,11 +31,16 @@ function saveTaskState(taskId, state) {
   _set('tasks', tasks);
 }
 
-function resetTodayTasks() {
+function resetTodayTasks(dailyTaskIds) {
   const tasks = loadTasks();
-  const t = today();
-  for (const id in tasks) {
-    if (tasks[id].lastDone === t) {
+  if (dailyTaskIds) {
+    // Only reset tasks whose IDs are in the daily list
+    for (const id of dailyTaskIds) {
+      if (tasks[id]) tasks[id].completed = false;
+    }
+  } else {
+    // Fallback: reset all completed tasks
+    for (const id in tasks) {
       tasks[id].completed = false;
     }
   }

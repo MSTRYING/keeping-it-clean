@@ -220,7 +220,8 @@
     const lastVisit = loadLastVisit();
     const t = today();
     if (lastVisit && lastVisit !== t) {
-      resetTodayTasks();
+      const dailyIds = cleaningTasks.filter(task => task.frequency === 'daily').map(task => task.id);
+      resetTodayTasks(dailyIds);
     }
     saveLastVisit(t);
   }
@@ -376,13 +377,14 @@
       el('button', {
         class: 'btn-reset',
         onClick: () => {
-          if (confirm('Reset all tasks for today?')) {
-            resetTodayTasks();
-            showToast('Tasks reset for today');
+          if (confirm('Reset all daily tasks?')) {
+            const dailyIds = cleaningTasks.filter(task => task.frequency === 'daily').map(task => task.id);
+            resetTodayTasks(dailyIds);
+            showToast('Daily tasks reset');
             render();
           }
         }
-      }, [resetIcon(), document.createTextNode(' Reset Today\'s Tasks')])
+      }, [resetIcon(), document.createTextNode(' Reset Daily Tasks')])
     ]));
 
     return container;
