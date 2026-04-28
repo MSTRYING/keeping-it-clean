@@ -316,6 +316,77 @@
     return bestScore > 0 ? bestMatch : null;
   }
 
+  // --- Streak + Calendar Helpers ---
+  function loadStreak() {
+    try { return JSON.parse(localStorage.getItem('kic_streak')) || { current: 0, best: 0, lastDate: null }; }
+    catch { return { current: 0, best: 0, lastDate: null }; }
+  }
+  function saveStreak(data) { localStorage.setItem('kic_streak', JSON.stringify(data)); }
+  function updateStreak() {
+    const streak = loadStreak();
+    const t = today();
+    if (streak.lastDate === t) return; // already counted today
+    if (streak.lastDate === t) return;
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split('T')[0];
+    if (streak.lastDate === yStr) {
+      streak.current++;
+    } else if (streak.lastDate !== t) {
+      streak.current = 1;
+    }
+    streak.lastDate = t;
+    streak.best = Math.max(streak.best, streak.current);
+    saveStreak(streak);
+  }
+  function loadCalendar() {
+    try { return JSON.parse(localStorage.getItem('kic_calendar')) || {}; }
+    catch { return {}; }
+  }
+  function saveCalendar(data) { localStorage.setItem('kic_calendar', JSON.stringify(data)); }
+  function recordCalendarDay(dateStr, done, total) {
+    const cal = loadCalendar();
+    cal[dateStr] = { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
+    saveCalendar(cal);
+  }
+
+  // --- Mini Calendar Render ---
+  function renderMiniCalendar() {
+    const cal = loadCalendar();
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const wrapper = el('div', { class: 'mini-calendar' });
+    wrapper.appendChild(el('div', { class: 'cal-header' }, [`${monthNames[month]} ${year}`]));
+
+    // Day headers
+    const dayHeaders = el('div', { class: 'cal-day-headers' });
+    for (const d of ['S','M','T','W','T','F','S']) dayHeaders.appendChild(el('div', { class: 'cal-day-label' }, [d]));
+    wrapper.appendChild(dayHeaders);
+
+    // Grid
+    const grid = el('div', { class: 'cal-grid' });
+    // Empty cells
+    for (let i = 0; i < firstDay; i++) grid.appendChild(el('div', { class: 'cal-cell empty' }));
+    // Day cells
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = d === now.getDate();
+      const data = cal[dateStr];
+      const cell = el('div', { class: ['cal-cell', { today: isToday, active: !!data }] });
+      cell.appendChild(el('div', { class: 'cal-day-num' }, [String(d)]));
+      if (data) {
+        cell.appendChild(el('div', { class: 'cal-pct', style: `background: conic-gradient(var(--color-accent) ${data.pct}%, var(--color-border) ${data.pct}%)` }));
+      }
+      grid.appendChild(cell);
+    }
+    wrapper.appendChild(grid);
+    return wrapper;
+  }
+
   // --- Checklist Tab ---
   function renderChecklist() {
     const container = el('div', { class: 'checklist-tab' });
@@ -386,6 +457,24 @@
     }
     container.appendChild(progressSection);
 
+    // Streak + Calendar
+    const streak = loadStreak();
+    const streakCard = el('div', { class: 'streak-card' });
+    streakCard.appendChild(el('div', { class: 'streak-stats' }, [
+      el('div', { class: 'streak-stat' }, [
+        el('div', { class: 'streak-number' }, [String(streak.current)]),
+        el('div', { class: 'streak-label' }, ['Current 🔥'])
+      ]),
+      el('div', { class: 'streak-stat' }, [
+        el('div', { class: 'streak-number' }, [String(streak.best)]),
+        el('div', { class: 'streak-label' }, ['Best ⭐'])
+      ])
+    ]));
+    container.appendChild(streakCard);
+
+    // Mini Calendar
+    container.appendChild(renderMiniCalendar());
+
     // Task groups
     const filteredTasks = activeFreqFilter === 'all' ? allTasks : allTasks.filter(t => t.frequency === activeFreqFilter);
     const groups = {};
@@ -409,12 +498,19 @@
 
         const item = el('div', {
           class: ['task-item', { completed: isCompleted }],
-          onClick: () => {
+        onClick: () => {
             const newCompleted = !isCompleted;
             saveTaskState(task.id, { completed: newCompleted });
-            if (newCompleted) showToast(`${task.icon} ${task.name} ✓`);
+            if (newCompleted) {
+                // Update streak + calendar
+                updateStreak();
+                const allT = getAllTasks();
+                const done = allT.filter(t => loadTasks()[t.id]?.completed).length;
+                recordCalendarDay(today(), done, allT.length);
+                showToast(`${task.icon} ${task.name} ✓`);
+            }
             render();
-          }
+        }
         });
 
         // Checkbox

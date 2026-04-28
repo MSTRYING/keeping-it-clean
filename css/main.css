@@ -869,6 +869,130 @@
 }
 
 /* ============================================
+   STREAK CARD
+   ============================================ */
+
+.streak-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-md);
+}
+
+.streak-stats {
+  display: flex;
+  gap: var(--space-xl);
+  justify-content: center;
+}
+
+.streak-stat {
+  text-align: center;
+  min-width: 80px;
+}
+
+.streak-number {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-accent-hi);
+  line-height: 1.2;
+}
+
+.streak-label {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ============================================
+   MINI CALENDAR
+   ============================================ */
+
+.mini-calendar {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-md);
+}
+
+.cal-header {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+  margin-bottom: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cal-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: var(--space-xs);
+}
+
+.cal-day-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--color-bg-alt);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.cal-cell.empty {
+  background: transparent;
+}
+
+.cal-cell.today {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.cal-cell.active {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-alt));
+}
+
+.cal-day-num {
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+
+.cal-cell.today .cal-day-num {
+  color: var(--color-accent-hi);
+  font-weight: 700;
+}
+
+.cal-pct {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+/* ============================================
    RESPONSIVE — Tablet & Desktop
    ============================================ */
 @media (min-width: 640px) {
