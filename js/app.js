@@ -387,6 +387,100 @@
     return wrapper;
   }
 
+  // --- Achievement Definitions ---
+  const ACHIEVEMENTS = [
+    { id: 'first_clean', name: 'First Clean', icon: '🌟', desc: 'Complete your first task', check: (s) => s.totalCompleted >= 1 },
+    { id: 'ten_clean', name: 'Clean Streak', icon: '🔥', desc: 'Complete 10 tasks total', check: (s) => s.totalCompleted >= 10 },
+    { id: 'fifty_clean', name: 'Cleaning Pro', icon: '💪', desc: 'Complete 50 tasks total', check: (s) => s.totalCompleted >= 50 },
+    { id: 'hundred_clean', name: 'Century Club', icon: '💯', desc: 'Complete 100 tasks total', check: (s) => s.totalCompleted >= 100 },
+    { id: 'streak_3', name: '3-Day Streak', icon: '🔥', desc: 'Keep a 3-day streak', check: (s) => s.bestStreak >= 3 },
+    { id: 'streak_7', name: 'Week Warrior', icon: '⚡', desc: 'Keep a 7-day streak', check: (s) => s.bestStreak >= 7 },
+    { id: 'streak_30', name: 'Monthly Master', icon: '🏆', desc: 'Keep a 30-day streak', check: (s) => s.bestStreak >= 30 },
+    { id: 'all_daily', name: 'Daily Done', icon: '✅', desc: 'Complete all daily tasks in one day', check: (s) => s.allDailyCompleted },
+    { id: 'all_weekly', name: 'Weekly Warrior', icon: '🎯', desc: 'Complete all weekly tasks', check: (s) => s.allWeeklyCompleted },
+    { id: 'all_done', name: 'Perfect Day', icon: '👑', desc: 'Complete every visible task', check: (s) => s.allTasksCompleted },
+    { id: 'recipe_user', name: 'DIY Creator', icon: '🧪', desc: 'Add a custom recipe', check: (s) => s.hasCustomRecipe },
+    { id: 'task_user', name: 'Task Maker', icon: '📝', desc: 'Add a custom task', check: (s) => s.hasUserTask },
+  ];
+
+  // --- Achievement State Tracking ---
+  function getAchievementState() {
+    const streak = loadStreak();
+    const cal = loadCalendar();
+    const taskState = loadTasks();
+    const allTasks = getAllTasks();
+    const todayStr = today();
+    const todayData = cal[todayStr] || {};
+
+    // Total completed today
+    const completedToday = allTasks.filter(t => taskState[t.id]?.completed).length;
+    const dailyTasks = allTasks.filter(t => t.frequency === 'daily');
+    const weeklyTasks = allTasks.filter(t => t.frequency === 'weekly');
+    const dailyDone = dailyTasks.filter(t => taskState[t.id]?.completed).length;
+    const weeklyDone = weeklyTasks.filter(t => taskState[t.id]?.completed).length;
+
+    return {
+      totalCompleted: completedToday,
+      bestStreak: streak.best,
+      allDailyCompleted: dailyTasks.length > 0 && dailyDone === dailyTasks.length,
+      allWeeklyCompleted: weeklyTasks.length > 0 && weeklyDone === weeklyTasks.length,
+      allTasksCompleted: allTasks.length > 0 && completedToday === allTasks.length,
+      hasCustomRecipe: loadCustomRecipes().length > 0,
+      hasUserTask: loadUserTasks().length > 0,
+    };
+  }
+
+  // --- Check & Unlock Achievements ---
+  function checkAchievements() {
+    const state = getAchievementState();
+    const newUnlocks = [];
+    for (const ach of ACHIEVEMENTS) {
+      if (ach.check(state) && unlockAchievement(ach.id)) {
+        newUnlocks.push(ach);
+      }
+    }
+    return newUnlocks;
+  }
+
+  // --- Render Achievements Section ---
+  function renderAchievements() {
+    const unlocked = loadAchievements();
+    if (unlocked.length === 0) return null;
+
+    const section = el('div', { class: 'achievements-section' });
+    section.appendChild(el('h3', { class: 'section-title' }, ['Achievements']));
+
+    const grid = el('div', { class: 'achievement-grid' });
+    for (const ach of ACHIEVEMENTS) {
+      const isUnlocked = unlocked.includes(ach.id);
+      const badge = el('div', {
+        class: ['achievement-badge', { unlocked: isUnlocked }],
+        title: isUnlocked ? ach.desc : '???'
+      });
+      badge.appendChild(el('div', { class: 'ach-icon' }, [isUnlocked ? ach.icon : '🔒']));
+      badge.appendChild(el('div', { class: 'ach-name' }, [isUnlocked ? ach.name : '???']));
+      grid.appendChild(badge);
+    }
+    section.appendChild(grid);
+    return section;
+  }
+
+  // --- Achievement Storage ---
+  function loadAchievements() {
+    try { return JSON.parse(localStorage.getItem('kic_achievements')) || []; }
+    catch { return []; }
+  }
+  function saveAchievements(arr) { localStorage.setItem('kic_achievements', JSON.stringify(arr)); }
+  function unlockAchievement(id) {
+    const unlocked = loadAchievements();
+    if (unlocked.includes(id)) return false;
+    unlocked.push(id);
+    saveAchievements(unlocked);
+    const ach = ACHIEVEMENTS.find(a => a.id === id);
+    if (ach) showToast(`🏆 Achievement: ${ach.name}!`);
+    return true;
+  }
+
   // --- Checklist Tab ---
   function renderChecklist() {
     const container = el('div', { class: 'checklist-tab' });
@@ -475,6 +569,10 @@
     // Mini Calendar
     container.appendChild(renderMiniCalendar());
 
+    // Achievements
+    const achievements = renderAchievements();
+    if (achievements) container.appendChild(achievements);
+
     // Task groups
     const filteredTasks = activeFreqFilter === 'all' ? allTasks : allTasks.filter(t => t.frequency === activeFreqFilter);
     const groups = {};
@@ -508,6 +606,8 @@
                 const done = allT.filter(t => loadTasks()[t.id]?.completed).length;
                 recordCalendarDay(today(), done, allT.length);
                 showToast(`${task.icon} ${task.name} ✓`);
+                // Check achievements
+                checkAchievements();
             }
             render();
         }
