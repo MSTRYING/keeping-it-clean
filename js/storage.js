@@ -148,7 +148,8 @@ function loadStreak() {
 function updateStreak() {
   const streak = loadStreak();
   const t = today();
-  const yesterday = new Date(Date.now() - 86400000);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
   if (streak.lastDate === t) return streak;
   if (streak.lastDate === yesterdayStr) {
