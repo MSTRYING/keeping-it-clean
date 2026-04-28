@@ -12,7 +12,8 @@ function _remove(key) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 // --- Task State ---
@@ -147,11 +148,12 @@ function loadStreak() {
 function updateStreak() {
   const streak = loadStreak();
   const t = today();
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000);
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
   if (streak.lastDate === t) return streak;
-  if (streak.lastDate === yesterday) {
+  if (streak.lastDate === yesterdayStr) {
     streak.current++;
-  } else if (streak.lastDate !== t && streak.lastDate !== yesterday) {
+  } else if (streak.lastDate !== t && streak.lastDate !== yesterdayStr) {
     streak.current = 1;
   }
   streak.lastDate = t;
@@ -169,7 +171,12 @@ function loadCalendar() {
 
 function recordCalendarDay(date, tasksCompleted, tasksTotal) {
   const cal = loadCalendar();
-  cal[date] = { completed: tasksCompleted, total: tasksTotal };
+  cal[date] = {
+    completed: tasksCompleted,
+    total: tasksTotal,
+    done: tasksCompleted,
+    pct: tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0
+  };
   _set('calendar', cal);
 }
 

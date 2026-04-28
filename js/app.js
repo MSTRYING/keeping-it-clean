@@ -9,6 +9,7 @@
   // --- State ---
   let activeTab = 'checklist';
   let activeFreqFilter = 'all';
+  let activeRoomFilter = 'all';
   let activeRecipeFilter = 'all';
   let expandedRecipeId = null;
   let showCustomRecipeModal = false;
@@ -316,38 +317,9 @@
     return bestScore > 0 ? bestMatch : null;
   }
 
-  // --- Streak + Calendar Helpers ---
-  function loadStreak() {
-    try { return JSON.parse(localStorage.getItem('kic_streak')) || { current: 0, best: 0, lastDate: null }; }
-    catch { return { current: 0, best: 0, lastDate: null }; }
-  }
-  function saveStreak(data) { localStorage.setItem('kic_streak', JSON.stringify(data)); }
-  function updateStreak() {
-    const streak = loadStreak();
-    const t = today();
-    if (streak.lastDate === t) return; // already counted today
-    if (streak.lastDate === t) return;
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().split('T')[0];
-    if (streak.lastDate === yStr) {
-      streak.current++;
-    } else if (streak.lastDate !== t) {
-      streak.current = 1;
-    }
-    streak.lastDate = t;
-    streak.best = Math.max(streak.best, streak.current);
-    saveStreak(streak);
-  }
-  function loadCalendar() {
-    try { return JSON.parse(localStorage.getItem('kic_calendar')) || {}; }
-    catch { return {}; }
-  }
-  function saveCalendar(data) { localStorage.setItem('kic_calendar', JSON.stringify(data)); }
-  function recordCalendarDay(dateStr, done, total) {
-    const cal = loadCalendar();
-    cal[dateStr] = { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
-    saveCalendar(cal);
-  }
+  // --- Streak + Calendar Helpers (delegated to storage.js) ---
+  // loadStreak, updateStreak, loadCalendar, recordCalendarDay, loadAchievements, unlockAchievement
+  // are all defined in storage.js and used from there.
 
   // --- Mini Calendar Render ---
   function renderMiniCalendar() {
@@ -465,23 +437,7 @@
     return section;
   }
 
-  // --- Achievement Storage ---
-  function loadAchievements() {
-    try { return JSON.parse(localStorage.getItem('kic_achievements')) || []; }
-    catch { return []; }
-  }
-  function saveAchievements(arr) { localStorage.setItem('kic_achievements', JSON.stringify(arr)); }
-  function unlockAchievement(id) {
-    const unlocked = loadAchievements();
-    if (unlocked.includes(id)) return false;
-    unlocked.push(id);
-    saveAchievements(unlocked);
-    const ach = ACHIEVEMENTS.find(a => a.id === id);
-    if (ach) showToast(`🏆 Achievement: ${ach.name}!`);
-    return true;
-  }
-
-  // --- Checklist Tab ---
+   // --- Checklist Tab ---
   function renderChecklist() {
     const container = el('div', { class: 'checklist-tab' });
     const allTasks = getAllTasks();
@@ -522,6 +478,22 @@
       }));
     }
     container.appendChild(freqContainer);
+
+    // Room filter chips
+    const roomContainer = el('div', { class: 'frequency-filters' });
+    roomContainer.appendChild(el('button', {
+      class: ['freq-chip', { active: activeRoomFilter === 'all' }],
+      textContent: '🏠 All Rooms',
+      onClick: () => { activeRoomFilter = 'all'; render(); }
+    }));
+    for (const room of rooms) {
+      roomContainer.appendChild(el('button', {
+        class: ['freq-chip', { active: activeRoomFilter === room.value }],
+        textContent: room.label,
+        onClick: () => { activeRoomFilter = room.value; render(); }
+      }));
+    }
+    container.appendChild(roomContainer);
 
     // Progress section
     const progressSection = el('div', { class: 'progress-section' });
@@ -573,8 +545,10 @@
     const achievements = renderAchievements();
     if (achievements) container.appendChild(achievements);
 
-    // Task groups
-    const filteredTasks = activeFreqFilter === 'all' ? allTasks : allTasks.filter(t => t.frequency === activeFreqFilter);
+    // Task groups (filter by frequency + room)
+    let filteredTasks = allTasks;
+    if (activeFreqFilter !== 'all') filteredTasks = filteredTasks.filter(t => t.frequency === activeFreqFilter);
+    if (activeRoomFilter !== 'all') filteredTasks = filteredTasks.filter(t => t.room === activeRoomFilter);
     const groups = {};
     for (const task of filteredTasks) {
       if (!groups[task.frequency]) groups[task.frequency] = [];
@@ -746,6 +720,18 @@
     freqGroup.appendChild(freqSelect);
     sheet.appendChild(freqGroup);
 
+    // Room select
+    const roomGroup = el('div', { class: 'form-group' });
+    roomGroup.appendChild(el('label', { class: 'form-label' }, ['Room']));
+    const roomSelect = el('select', { class: 'form-input', id: 'tmRoom' });
+    for (const room of rooms) {
+      const opt = el('option', { value: room.value }, [room.label]);
+      if ((editingTask?.room || 'general') === room.value) opt.selected = true;
+      roomSelect.appendChild(opt);
+    }
+    roomGroup.appendChild(roomSelect);
+    sheet.appendChild(roomGroup);
+
     for (const field of fields) {
       const group = el('div', { class: 'form-group' });
       group.appendChild(el('label', { class: 'form-label' }, [field.label]));
@@ -771,6 +757,7 @@
           name, icon,
           note: ($('#tmNote')?.value || '').trim(),
           frequency: ($('#tmFreq')?.value || 'daily'),
+          room: ($('#tmRoom')?.value || 'general'),
           isUserTask: true
         };
         saveUserTask(task);
@@ -806,7 +793,7 @@
     });
     searchInput.id = 'recipe-search';
     if (window._recipeSearchTerm) searchInput.value = window._recipeSearchTerm;
-    searchInput.addEventListener('input', (e) => { window._recipeSearchTerm = e.target.value; render(); });
+    searchInput.addEventListener('input', (e) => { window._recipeSearchTerm = e.target.value; expandedRecipeId = null; render(); });
     container.appendChild(searchInput);
 
     // Filter chips
@@ -815,7 +802,7 @@
       filterContainer.appendChild(el('button', {
         class: ['freq-chip', { active: activeRecipeFilter === tag.value }],
         textContent: tag.label,
-        onClick: () => { activeRecipeFilter = tag.value; expandedRecipeId = null; render(); }
+        onClick: () => { activeRecipeFilter = tag.value; expandedRecipeId = null; window._recipeSearchTerm = ''; render(); }
       }));
     }
     container.appendChild(filterContainer);

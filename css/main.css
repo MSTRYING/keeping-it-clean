@@ -159,8 +159,6 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 
-.task-item[data-v-]:not(.completed)::before { background: transparent; }
-
 /* Frequency-based left borders */
 .task-item .freq-badge.daily ~ *::before,
 .task-item:has(.freq-badge.daily)::before { background: var(--color-freq-daily); }
