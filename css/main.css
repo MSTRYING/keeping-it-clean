@@ -7,14 +7,14 @@
 #app {
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 0 var(--space-md) calc(var(--tab-bar-height) + var(--space-xl));
+  padding: env(safe-area-inset-top, 0) var(--space-md) calc(var(--tab-bar-height) + var(--space-xl));
   min-height: 100dvh;
 }
 
 /* --- Header --- */
 .app-header {
   text-align: center;
-  padding: var(--space-lg) 0 var(--space-md);
+  padding: calc(var(--space-lg) + env(safe-area-inset-top, 0)) 0 var(--space-md);
 }
 
 .app-header h1 {
@@ -144,6 +144,7 @@
   box-shadow: var(--shadow-card);
   transition: all var(--duration-fast) var(--ease-out);
   cursor: pointer;
+  min-width: 0;
   position: relative;
   overflow: hidden;
 }
@@ -232,6 +233,8 @@
   font-weight: 500;
   color: var(--color-text);
   line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .task-note {
@@ -689,6 +692,7 @@
   width: 100%;
   max-width: var(--content-max-width);
   max-height: 85dvh;
+  overflow-x: hidden;
   overflow-y: auto;
   box-shadow: var(--shadow-modal);
   animation: slideUp var(--duration-normal) var(--ease-out);
@@ -745,6 +749,17 @@
 .form-textarea {
   min-height: 100px;
   resize: vertical;
+}
+
+.form-error {
+  font-size: var(--fs-xs);
+  color: var(--color-danger);
+  margin-top: var(--space-xs);
+  display: none;
+}
+
+.form-error:not(:empty) {
+  display: block;
 }
 
 .btn-primary {

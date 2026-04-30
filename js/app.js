@@ -17,6 +17,9 @@
   let editingTaskId = null;
   let toastMessage = '';
   let toastVisible = false;
+  let scrollPositions = { checklist: 0, recipes: 0 };
+  let newTaskFreq = 'daily';
+  let recipeSearchTerm = '';
 
   // --- Timer State ---
   let activeTimer = null; // { taskId, startTime (ms), elapsed (ms) }
@@ -163,28 +166,32 @@
     return activeTimer.elapsed + (Date.now() - activeTimer.lastTick);
   }
 
+  function pauseTimerInterval() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function resumeTimerInterval() {
+    pauseTimerInterval();
+    if (activeTimer) {
+      timerInterval = setInterval(() => {
+        activeTimer.elapsed += Date.now() - activeTimer.lastTick;
+        activeTimer.lastTick = Date.now();
+        saveActiveTimer(activeTimer);
+        const td = $('#timer-display');
+        if (td) td.textContent = formatTime(getTimerElapsed());
+      }, 1000);
+    }
+  }
+
   function startTimer(taskId) {
     const saved = loadActiveTimer();
     if (saved && saved.taskId === taskId) {
-      // Resume
       activeTimer = { taskId: saved.taskId, startTime: saved.startTime, elapsed: saved.elapsed + (Date.now() - saved.lastTick), lastTick: Date.now() };
     } else {
-      // New
       activeTimer = { taskId, startTime: Date.now(), elapsed: 0, lastTick: Date.now() };
     }
     saveActiveTimer(activeTimer);
-    if (!timerInterval) {
-      timerInterval = setInterval(() => {
-        if (activeTimer) {
-          activeTimer.lastTick = Date.now();
-          saveActiveTimer(activeTimer);
-          const timerDisplay = $('#timer-display');
-          if (timerDisplay) {
-            timerDisplay.textContent = formatTime(getTimerElapsed());
-          }
-        }
-      }, 1000);
-    }
+    resumeTimerInterval();
   }
 
   function stopTimer() {
@@ -195,7 +202,7 @@
     }
     activeTimer = null;
     clearActiveTimer();
-    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    pauseTimerInterval();
   }
 
   function toggleTimer(taskId) {
@@ -208,9 +215,26 @@
   }
 
   // --- Toast ---
+  let toastTimer = null;
   function showToast(msg) {
+    if (toastTimer) clearTimeout(toastTimer);
     toastMessage = msg; toastVisible = true; render();
-    setTimeout(() => { toastVisible = false; render(); }, 2500);
+    toastTimer = setTimeout(() => { toastVisible = false; toastTimer = null; render(); }, 2500);
+  }
+
+  // --- Confirm Dialog ---
+  function showConfirm(message) {
+    return new Promise((resolve) => {
+      const overlay = el('div', { class: 'modal-overlay', onClick: (e) => { if (e.target === overlay) cleanup(false); } });
+      const sheet = el('div', { class: 'modal-sheet' });
+      sheet.appendChild(el('div', { class: 'modal-handle' }));
+      sheet.appendChild(el('h2', { class: 'modal-title' }, [message]));
+      sheet.appendChild(el('button', { class: 'btn-primary', onClick: () => cleanup(true) }, ['OK']));
+      sheet.appendChild(el('button', { class: 'btn-secondary', onClick: () => cleanup(false) }, ['Cancel']));
+      overlay.appendChild(sheet);
+      document.getElementById('app').appendChild(overlay);
+      function cleanup(result) { overlay.remove(); resolve(result); }
+    });
   }
 
   // --- Daily Reset Check ---
@@ -219,8 +243,28 @@
     const t = today();
     if (lastVisit && lastVisit !== t) {
       const allTasks = getAllTasks();
-      const dailyIds = allTasks.filter(task => task.frequency === 'daily').map(task => task.id);
-      resetTodayTasks(dailyIds);
+      const now = new Date();
+      for (const task of allTasks) {
+        const lastDone = loadTasks()[task.id]?.lastCompleted;
+        if (!lastDone) continue;
+        const last = new Date(lastDone + 'T00:00:00');
+        const diffDays = (now - last) / 86400000;
+        let shouldReset = false;
+        switch (task.frequency) {
+          case 'daily': shouldReset = true; break;
+          case 'weekly': shouldReset = diffDays >= 7; break;
+          case 'biweekly': shouldReset = diffDays >= 14; break;
+          case 'monthly': shouldReset = diffDays >= 30; break;
+        }
+        if (shouldReset) {
+          const tasks = loadTasks();
+          if (tasks[task.id]) {
+            tasks[task.id].completed = false;
+            tasks[task.id].completedDate = null;
+          }
+          saveTaskState(task.id, tasks[task.id]);
+        }
+      }
     }
     saveLastVisit(t);
   }
@@ -570,17 +614,19 @@
 
         const item = el('div', {
           class: ['task-item', { completed: isCompleted }],
+          role: 'checkbox',
+          'aria-checked': isCompleted,
+          'aria-label': task.name + (isCompleted ? ' (completed)' : ' (not completed)'),
         onClick: () => {
             const newCompleted = !isCompleted;
             saveTaskState(task.id, { completed: newCompleted });
+            // Update streak + calendar on check or uncheck
+            updateStreak();
+            const allT = getAllTasks();
+            const done = allT.filter(t => loadTasks()[t.id]?.completed).length;
+            recordCalendarDay(today(), done, allT.length);
             if (newCompleted) {
-                // Update streak + calendar
-                updateStreak();
-                const allT = getAllTasks();
-                const done = allT.filter(t => loadTasks()[t.id]?.completed).length;
-                recordCalendarDay(today(), done, allT.length);
                 showToast(`${task.icon} ${task.name} ✓`);
-                // Check achievements
                 checkAchievements();
             }
             render();
@@ -638,9 +684,9 @@
           actions.appendChild(el('button', {
             class: 'task-action-btn delete-btn',
             title: 'Delete task',
-            onClick: (e) => {
+            onClick: async (e) => {
               e.stopPropagation();
-              if (confirm(`Delete "${task.name}"?`)) {
+              if (await showConfirm(`Delete "${task.name}"?`)) {
                 deleteUserTask(task.id);
                 showToast('Task deleted');
                 render();
@@ -658,7 +704,7 @@
         class: 'add-task-btn',
         onClick: () => {
           editingTaskId = null;
-          window._newTaskFreq = freq;
+          newTaskFreq = freq;
           showTaskModal = true;
           render();
         }
@@ -671,8 +717,8 @@
     container.appendChild(el('div', { class: 'reset-section' }, [
       el('button', {
         class: 'btn-reset',
-        onClick: () => {
-          if (confirm('Reset all daily tasks?')) {
+        onClick: async () => {
+          if (await showConfirm('Reset all daily tasks?')) {
             const dailyIds = allTasks.filter(task => task.frequency === 'daily').map(task => task.id);
             resetTodayTasks(dailyIds);
             showToast('Daily tasks reset');
@@ -714,7 +760,7 @@
     const freqSelect = el('select', { class: 'form-input', id: 'tmFreq' });
     for (const freq of frequencies) {
       const opt = el('option', { value: freq.value }, [freq.label]);
-      if ((editingTask?.frequency || window._newTaskFreq || 'daily') === freq.value) opt.selected = true;
+      if ((editingTask?.frequency || newTaskFreq || 'daily') === freq.value) opt.selected = true;
       freqSelect.appendChild(opt);
     }
     freqGroup.appendChild(freqSelect);
@@ -745,15 +791,18 @@
       sheet.appendChild(group);
     }
 
+    // Error message
+    sheet.appendChild(el('div', { class: 'form-error', id: 'tmError', style: 'display:none' }, ['']));
+
     // Submit
     sheet.appendChild(el('button', {
       class: 'btn-primary',
       onClick: () => {
         const name = ($('#tmName')?.value || '').trim();
         const icon = ($('#tmIcon')?.value || '').trim();
-        if (!name || !icon) { alert('Please fill in name and icon.'); return; }
+        if (!name || !icon) { const err = $('#tmError'); if (err) err.textContent = 'Please fill in name and icon.'; return; }
         const task = {
-          id: editingTask ? editingTask.id : 'user_' + Date.now(),
+          id: editingTask ? editingTask.id : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
           name, icon,
           note: ($('#tmNote')?.value || '').trim(),
           frequency: ($('#tmFreq')?.value || 'daily'),
@@ -792,8 +841,8 @@
       style: 'margin-bottom: var(--space-md);'
     });
     searchInput.id = 'recipe-search';
-    if (window._recipeSearchTerm) searchInput.value = window._recipeSearchTerm;
-    searchInput.addEventListener('input', (e) => { window._recipeSearchTerm = e.target.value; expandedRecipeId = null; render(); });
+    if (recipeSearchTerm) searchInput.value = recipeSearchTerm;
+    searchInput.addEventListener('input', (e) => { recipeSearchTerm = e.target.value; expandedRecipeId = null; render(); });
     container.appendChild(searchInput);
 
     // Filter chips
@@ -802,7 +851,7 @@
       filterContainer.appendChild(el('button', {
         class: ['freq-chip', { active: activeRecipeFilter === tag.value }],
         textContent: tag.label,
-        onClick: () => { activeRecipeFilter = tag.value; expandedRecipeId = null; window._recipeSearchTerm = ''; render(); }
+        onClick: () => { activeRecipeFilter = tag.value; expandedRecipeId = null; recipeSearchTerm = ''; render(); }
       }));
     }
     container.appendChild(filterContainer);
@@ -815,8 +864,8 @@
 
     let filtered = allRecipes;
     if (activeRecipeFilter !== 'all') filtered = filtered.filter(r => r.tags && r.tags.includes(activeRecipeFilter));
-    if (window._recipeSearchTerm) {
-      const q = window._recipeSearchTerm.toLowerCase();
+    if (recipeSearchTerm) {
+      const q = recipeSearchTerm.toLowerCase();
       filtered = filtered.filter(r => r.name.toLowerCase().includes(q) || (r.tags && r.tags.some(t => t.includes(q))) || (r.jpName && r.jpName.includes(q)));
     }
 
@@ -838,7 +887,7 @@
         header.appendChild(titleArea);
         header.appendChild(el('button', { class: ['recipe-fav-btn', { active: isFav }], onClick: (e) => { e.stopPropagation(); toggleFavorite(recipe.id); render(); } }, [heartIcon(isFav)]));
         if (recipe.isCustom) {
-          header.appendChild(el('button', { class: 'recipe-fav-btn', style: 'color: var(--color-danger);', onClick: (e) => { e.stopPropagation(); if (confirm('Delete this recipe?')) { deleteCustomRecipe(recipe.id); showToast('Recipe deleted'); render(); } } }, [closeIcon()]));
+          header.appendChild(el('button', { class: 'recipe-fav-btn', style: 'color: var(--color-danger);', onClick: async (e) => { e.stopPropagation(); if (await showConfirm('Delete this recipe?')) { deleteCustomRecipe(recipe.id); showToast('Recipe deleted'); render(); } } }, [closeIcon()]));
         }
         header.appendChild(chevronIcon(isExpanded));
         card.appendChild(header);
@@ -894,12 +943,14 @@
         else group.appendChild(el('input', { class: 'form-input', type: field.type || 'text', id: field.key, placeholder: field.placeholder || '', required: field.required || false }));
         sheet.appendChild(group);
       }
+      sheet.appendChild(el('div', { class: 'form-error', id: 'crError', style: 'display:none' }, ['']));
+
       sheet.appendChild(el('button', { class: 'btn-primary', onClick: () => {
         const name = ($('#crName')?.value || '').trim();
         const ingredients = ($('#crIngredients')?.value || '').trim();
         const steps = ($('#crSteps')?.value || '').trim();
-        if (!name || !ingredients || !steps) { alert('Please fill in name, ingredients, and steps.'); return; }
-        const recipe = { id: 'custom_' + Date.now(), name, jpName: ($('#crJpName')?.value || '').trim() || '', emoji: ($('#crEmoji')?.value || '').trim() || '🧴', ingredients: ingredients.split('\n').map(s => s.trim()).filter(Boolean), steps: steps.split('\n').map(s => s.trim()).filter(Boolean), note: ($('#crNote')?.value || '').trim() || '', tags: ($('#crTags')?.value || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean), isPetSafe: true };
+        if (!name || !ingredients || !steps) { const err = $('#crError'); if (err) err.textContent = 'Please fill in name, ingredients, and steps.'; return; }
+        const recipe = { id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), name, jpName: ($('#crJpName')?.value || '').trim() || '', emoji: ($('#crEmoji')?.value || '').trim() || '🧴', ingredients: ingredients.split('\n').map(s => s.trim()).filter(Boolean), steps: steps.split('\n').map(s => s.trim()).filter(Boolean), note: ($('#crNote')?.value || '').trim() || '', tags: ($('#crTags')?.value || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean), isPetSafe: true };
         saveCustomRecipe(recipe); showCustomRecipeModal = false; showToast(`${recipe.emoji} Recipe added!`); render();
       } }, ['Save Recipe']));
       sheet.appendChild(el('button', { class: 'btn-secondary', onClick: () => { showCustomRecipeModal = false; render(); } }, ['Cancel']));
@@ -912,39 +963,70 @@
 
   // --- Tab Bar ---
   function renderTabBar() {
-    return el('nav', { class: 'tab-bar' }, [
-      el('button', { class: ['tab-item', { active: activeTab === 'checklist' }], onClick: () => { activeTab = 'checklist'; window.scrollTo({ top: 0, behavior: 'smooth' }); render(); } }, [checklistTabIcon(activeTab === 'checklist'), el('span', {}, ['Tasks'])]),
-      el('button', { class: ['tab-item', { active: activeTab === 'recipes' }], onClick: () => { activeTab = 'recipes'; window.scrollTo({ top: 0, behavior: 'smooth' }); render(); } }, [recipeTabIcon(activeTab === 'recipes'), el('span', {}, ['Recipes'])])
+    return el('nav', { class: 'tab-bar', role: 'tablist', 'aria-label': 'Main navigation' }, [
+      el('button', { class: ['tab-item', { active: activeTab === 'checklist' }], role: 'tab', 'aria-selected': activeTab === 'checklist', 'aria-controls': 'panel-checklist', id: 'tab-checklist', onClick: () => { scrollPositions[activeTab] = window.scrollY; activeTab = 'checklist'; render(); requestAnimationFrame(() => window.scrollTo(0, scrollPositions.checklist)); } }, [checklistTabIcon(activeTab === 'checklist'), el('span', {}, ['Tasks'])]),
+      el('button', { class: ['tab-item', { active: activeTab === 'recipes' }], role: 'tab', 'aria-selected': activeTab === 'recipes', 'aria-controls': 'panel-recipes', id: 'tab-recipes', onClick: () => { scrollPositions[activeTab] = window.scrollY; activeTab = 'recipes'; render(); requestAnimationFrame(() => window.scrollTo(0, scrollPositions.recipes)); } }, [recipeTabIcon(activeTab === 'recipes'), el('span', {}, ['Recipes'])])
     ]);
   }
 
   // --- Toast ---
   function renderToast() {
     if (!toastVisible) return null;
-    return el('div', { class: 'toast' }, [toastMessage]);
+    return el('div', { class: 'toast', role: 'status', 'aria-live': 'polite' }, [toastMessage]);
   }
 
   // --- Main Render ---
   function render() {
     const app = document.getElementById('app');
     if (!app) return;
-    app.innerHTML = '';
-    if (activeTab === 'checklist') app.appendChild(renderChecklist());
-    else app.appendChild(renderRecipes());
-    app.appendChild(renderTabBar());
-    const toast = renderToast();
-    if (toast) app.appendChild(toast);
+    requestAnimationFrame(() => {
+      const frag = document.createDocumentFragment();
+      if (activeTab === 'checklist') frag.appendChild(renderChecklist());
+      else frag.appendChild(renderRecipes());
+      frag.appendChild(renderTabBar());
+      const toast = renderToast();
+      if (toast) frag.appendChild(toast);
+      while (app.firstChild) app.removeChild(app.firstChild);
+      app.appendChild(frag);
+    });
   }
 
   // --- Init ---
   function init() {
     checkDailyReset();
-    // Restore active timer from storage
+    // Restore active timer from storage (clear if stale >24h)
     const savedTimer = loadActiveTimer();
     if (savedTimer) {
-      activeTimer = savedTimer;
-      startTimer(savedTimer.taskId);
+      const elapsed = (Date.now() - savedTimer.startTime) / 1000;
+      if (elapsed > 86400) {
+        saveActiveTimer(null); // stale — discard
+      } else {
+        activeTimer = savedTimer;
+        startTimer(savedTimer.taskId);
+      }
     }
+    // Alert on localStorage quota exceeded
+    window.addEventListener('storage-quota-exceeded', () => {
+      showToast('⚠️ Storage full — please export and clear old data');
+    });
+
+    // Pause timer interval when tab is hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) pauseTimerInterval();
+      else resumeTimerInterval();
+    });
+
+    // Update theme-color meta on dark mode change
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    const updateThemeColor = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (themeColorMeta) themeColorMeta.content = isDark ? '#1a1a2e' : '#F5F2EB';
+    };
+    updateThemeColor();
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      updateThemeColor();
+    });
+
     render();
   }
 

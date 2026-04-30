@@ -5,7 +5,11 @@ function _get(key) {
   try { return localStorage.getItem(PREFIX + key); } catch(e) { return null; }
 }
 function _set(key, value) {
-  try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch(e) {}
+  try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch(e) {
+    if (e.name === 'QuotaExceededError') {
+      window.dispatchEvent(new CustomEvent('storage-quota-exceeded'));
+    }
+  }
 }
 function _remove(key) {
   try { localStorage.removeItem(PREFIX + key); } catch(e) {}
@@ -221,9 +225,11 @@ function saveSoundEnabled(val) {
 }
 
 // --- Export / Import ---
+const EXPORT_VERSION = 2;
+
 function exportAllData() {
   return {
-    version: 1,
+    version: EXPORT_VERSION,
     exported: new Date().toISOString(),
     tasks: loadTasks(),
     userTasks: loadUserTasks(),
@@ -237,8 +243,19 @@ function exportAllData() {
   };
 }
 
+function migrateImport(data) {
+  /* v1 → v2: no schema change yet, but reserved for future migrations */
+  if (data.version === 1) {
+    data.version = EXPORT_VERSION;
+  }
+  return data;
+}
+
 function importAllData(data) {
   if (!data || !data.version) return false;
+  if (!Array.isArray(data.tasks) || typeof data.calendar !== 'object') return false;
+  data = migrateImport(data);
+  if (!confirm('Import data? This will overwrite your current data.')) return false;
   if (data.tasks) _set('tasks', data.tasks);
   if (data.userTasks) _set('user-tasks', data.userTasks);
   if (data.customRecipes) _set('custom-recipes', data.customRecipes);
