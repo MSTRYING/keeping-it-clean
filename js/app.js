@@ -6,6 +6,15 @@
 (function () {
   'use strict';
 
+  // Error overlay — never show a blank page
+  window.addEventListener('error', (e) => {
+    const msg = e.message + (e.filename ? ' (' + e.filename + ':' + e.lineno + ')' : '');
+    const app = document.getElementById('app');
+    if (app && !app.children.length) {
+      app.innerHTML = `<div style="padding:2rem;text-align:center;font-family:sans-serif"><h2>Something went wrong</h2><pre style="white-space:pre-wrap;word-break:all;background:#f5f2eb;padding:1rem;border-radius:8px">${msg}</pre><button onclick="location.reload()" style="padding:0.5rem 1rem;margin-top:1rem;cursor:pointer">Reload</button></div>`;
+    }
+  });
+
   // --- State ---
   let activeTab = 'checklist';
   let activeFreqFilter = 'all';
@@ -1356,9 +1365,10 @@
     // Register Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
+
 
     render();
   }

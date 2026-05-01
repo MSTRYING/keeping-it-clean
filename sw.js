@@ -1,13 +1,13 @@
-const CACHE_NAME = 'katazuke-v1';
+const CACHE_NAME = 'katazuke-v2';
 const ASSETS = [
-  '/index.html',
-  '/css/main.css',
-  '/css/theme.css',
-  '/js/app.js',
-  '/js/storage.js',
-  '/js/data-tasks.js',
-  '/js/data-recipes.js',
-  '/manifest.json'
+  './index.html',
+  './css/main.css',
+  './css/theme.css',
+  './js/app.js',
+  './js/storage.js',
+  './js/data-tasks.js',
+  './js/data-recipes.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
