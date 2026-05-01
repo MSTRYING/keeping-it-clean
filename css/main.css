@@ -3,6 +3,11 @@
    "Keeping it Clean" · 片付け Katazuke
    ============================================ */
 
+/* --- Reset --- */
+*, *::before, *::after { box-sizing: border-box; }
+html { overflow-x: hidden; overscroll-behavior: none; }
+body:has(.modal-overlay) { overflow: hidden; }
+
 /* --- App Shell --- */
 #app {
   max-width: var(--content-max-width);
@@ -186,14 +191,18 @@
 /* Checkbox */
 .task-checkbox {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   border: 2px solid var(--color-text-light);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--duration-fast) var(--ease-spring);
+  padding: 0;
+  touch-action: manipulation;
 }
 
 .task-checkbox svg {
@@ -247,7 +256,7 @@
 /* Frequency Badge */
 .freq-badge {
   flex-shrink: 0;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -275,14 +284,17 @@
 /* --- Task Timer Button --- */
 .task-timer-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   transition: all var(--duration-fast) var(--ease-out);
   padding: 0;
+  touch-action: manipulation;
 }
 
 .task-timer-btn:hover {
@@ -334,14 +346,17 @@
 }
 
 .task-action-btn {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   transition: all var(--duration-fast) var(--ease-out);
   padding: 0;
+  touch-action: manipulation;
 }
 
 .task-action-btn.edit-btn:hover {
@@ -364,8 +379,10 @@
 }
 
 .reorder-btn {
-  width: 22px;
-  height: 22px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,6 +394,7 @@
   opacity: 0.5;
   transition: all var(--duration-fast) var(--ease-out);
   padding: 0;
+  touch-action: manipulation;
 }
 
 .reorder-btn:hover:not(:disabled) {
@@ -524,13 +542,17 @@
 /* Favorite Button */
 .recipe-fav-btn {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   transition: all var(--duration-fast) var(--ease-spring);
+  padding: 0;
+  touch-action: manipulation;
 }
 
 .recipe-fav-btn svg {
@@ -678,7 +700,7 @@
 /* --- FAB (Floating Action Button) --- */
 .fab {
   position: fixed;
-  bottom: calc(var(--tab-bar-height) + var(--space-xl));
+  bottom: calc(var(--tab-bar-height) + var(--space-xl) + env(safe-area-inset-bottom, 0));
   right: max(var(--space-lg), calc((100vw - var(--content-max-width)) / 2 + var(--space-md)));
   width: 56px;
   height: 56px;
@@ -734,7 +756,7 @@
 .modal-sheet {
   background: var(--color-surface);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: var(--space-md) var(--space-lg) var(--space-xl);
+  padding: var(--space-md) var(--space-lg) calc(var(--space-xl) + env(safe-area-inset-bottom, 0));
   width: 100%;
   max-width: var(--content-max-width);
   max-height: 85dvh;
@@ -839,7 +861,7 @@
 /* --- Toast --- */
 .toast {
   position: fixed;
-  bottom: calc(var(--tab-bar-height) + var(--space-lg));
+  bottom: calc(var(--tab-bar-height) + var(--space-lg) + env(safe-area-inset-bottom, 0));
   left: 50%;
   transform: translateX(-50%);
   background: var(--color-text);
@@ -994,7 +1016,7 @@
 }
 
 .cal-day-label {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-muted);
   text-align: center;
@@ -1105,7 +1127,7 @@
 }
 
 .ach-name {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-muted);
   text-align: center;
@@ -1287,6 +1309,15 @@
 
   .fab {
     right: max(var(--space-lg), calc((100vw - var(--content-max-width)) / 2 + var(--space-md)));
+  }
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
