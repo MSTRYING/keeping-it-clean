@@ -1,5 +1,5 @@
 // ============================================
-// Keeping it Clean · 片付け Katazuke
+// Keeping it Clean
 // Vanilla JS App - No Framework Dependencies
 // ============================================
 
@@ -716,7 +716,7 @@
     // Header
     container.appendChild(el('header', { class: 'app-header' }, [
       el('h1', {}, ['Keeping it Clean']),
-      el('p', { class: 'subtitle' }, ['片付け · Katazuke'])
+      el('p', { class: 'subtitle' }, ['Cleaning made simple'])
     ]));
 
     // Global Timer Display (if timer is running)
@@ -1066,7 +1066,7 @@
     const container = el('div', { class: 'recipes-tab' });
     container.appendChild(el('header', { class: 'app-header' }, [
       el('h1', {}, ['DIY Recipes']),
-      el('p', { class: 'subtitle' }, ['エコレシピ · Eco-Friendly'])
+      el('p', { class: 'subtitle' }, ['Eco-Friendly DIY Cleaners'])
     ]));
 
     // Search
@@ -1100,7 +1100,7 @@
     if (activeRecipeFilter !== 'all') filtered = filtered.filter(r => r.tags && r.tags.includes(activeRecipeFilter));
     if (recipeSearchTerm) {
       const q = recipeSearchTerm.toLowerCase();
-      filtered = filtered.filter(r => r.name.toLowerCase().includes(q) || (r.tags && r.tags.some(t => t.includes(q))) || (r.jpName && r.jpName.includes(q)));
+      filtered = filtered.filter(r => r.name.toLowerCase().includes(q) || (r.tags && r.tags.some(t => t.includes(q))));
     }
 
     if (filtered.length === 0) {
@@ -1117,7 +1117,6 @@
         header.appendChild(el('div', { class: 'recipe-emoji' }, [recipe.emoji || '🧴']));
         const titleArea = el('div', { class: 'recipe-title-area' });
         titleArea.appendChild(el('div', { class: 'recipe-name' }, [recipe.name]));
-        if (recipe.jpName) titleArea.appendChild(el('div', { class: 'recipe-jp-name' }, [recipe.jpName]));
         header.appendChild(titleArea);
         header.appendChild(el('button', { class: ['recipe-fav-btn', { active: isFav }], onClick: (e) => { e.stopPropagation(); toggleFavorite(recipe.id); render(); } }, [heartIcon(isFav)]));
         if (recipe.isCustom) {
@@ -1358,14 +1357,18 @@
       else resumeTimerInterval();
     });
 
+    // Apply saved dark mode preference
+    setDarkMode(loadDarkMode());
+
     // Update theme-color meta on dark mode change
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     const updateThemeColor = () => {
-      const isDark = document.documentElement.classList.contains('dark');
-      if (themeColorMeta) themeColorMeta.content = isDark ? '#1a1a2e' : '#F5F2EB';
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (themeColorMeta) themeColorMeta.content = isDark ? '#141821' : '#F7F4EE';
     };
     updateThemeColor();
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      setDarkMode(loadDarkMode());
       updateThemeColor();
     });
 

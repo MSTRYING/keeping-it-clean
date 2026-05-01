@@ -59,7 +59,7 @@
 }
 
 .freq-chip.active {
-  background: var(--color-accent-lo);
+  background: var(--color-accent-bg);
   color: var(--color-accent-hi);
   border-color: var(--color-accent);
 }
@@ -193,7 +193,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast) var(--bounce);
+  transition: all var(--duration-fast) var(--ease-spring);
 }
 
 .task-checkbox svg {
@@ -201,7 +201,7 @@
   height: 14px;
   opacity: 0;
   transform: scale(0.5);
-  transition: all var(--duration-fast) var(--bounce);
+  transition: all var(--duration-fast) var(--ease-spring);
 }
 
 .task-item.completed .task-checkbox {
@@ -381,8 +381,8 @@
 
 .reorder-btn:hover:not(:disabled) {
   opacity: 1;
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .reorder-btn:disabled {
@@ -493,7 +493,7 @@
 }
 
 .recipe-header:hover {
-  background: var(--color-surface-hi);
+  background: var(--color-surface-hover);
 }
 
 .recipe-emoji {
@@ -530,7 +530,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all var(--duration-fast) var(--bounce);
+  transition: all var(--duration-fast) var(--ease-spring);
 }
 
 .recipe-fav-btn svg {
@@ -635,7 +635,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--color-accent-lo);
+  background: var(--color-accent-bg);
   color: var(--color-accent-hi);
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -689,7 +689,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast) var(--bounce);
+  transition: all var(--duration-fast) var(--ease-spring);
   z-index: 10;
 }
 
@@ -707,13 +707,23 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30, 28, 26, 0.5);
+  background: rgba(44, 40, 36, 0.45);
   backdrop-filter: blur(4px);
   z-index: 100;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   animation: fadeIn var(--duration-fast) var(--ease-out);
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .modal-overlay {
+    background: rgba(0, 0, 0, 0.5);
+  }
 }
 
 @keyframes fadeIn {
@@ -772,7 +782,7 @@
   padding: var(--space-sm) var(--space-md);
   border: 1.5px solid var(--color-bg-alt);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-hi);
+  background: var(--color-surface-hover);
   color: var(--color-text);
   transition: border-color var(--duration-fast) var(--ease-out);
 }
@@ -891,7 +901,7 @@
   height: 2px;
   background: var(--color-accent);
   border-radius: var(--radius-full);
-  transition: transform var(--duration-fast) var(--bounce);
+  transition: transform var(--duration-fast) var(--ease-spring);
 }
 
 .tab-item.active::before {
@@ -1140,61 +1150,6 @@
   animation: confettiFall 1s ease-out forwards;
 }
 
-/* ============================================
-   DATA-THEME — In-app dark mode override
-   ============================================ */
-[data-theme="dark"] {
-  --color-bg: #1a1a2e;
-  --color-surface: #16213e;
-  --color-surface-hover: #1f2b4d;
-  --color-text: #e0e0e0;
-  --color-text-muted: #a0a0a0;
-  --color-primary: #E8D5B7;
-  --color-primary-dark: #C4A882;
-  --color-accent: #8B7355;
-  --color-border: #2a2a4a;
-  --color-shadow: rgba(0, 0, 0, 0.4);
-  --color-success: #4caf50;
-  --color-warning: #ff9800;
-  --color-danger: #f44336;
-}
-
-[data-theme="light"] {
-  --color-bg: #F5F2EB;
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #f9f7f3;
-  --color-text: #333333;
-  --color-text-muted: #888888;
-  --color-primary: #C4A882;
-  --color-primary-dark: #8B7355;
-  --color-accent: #8B7355;
-  --color-border: #e0e0e0;
-  --color-shadow: rgba(0, 0, 0, 0.1);
-  --color-success: #4caf50;
-  --color-warning: #ff9800;
-  --color-danger: #f44336;
-}
-
-[data-theme="dark"] .task-item,
-[data-theme="dark"] .recipe-card,
-[data-theme="dark"] .progress-card,
-[data-theme="dark"] .streak-card,
-[data-theme="dark"] .modal-sheet,
-[data-theme="dark"] .freq-chip {
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .empty-state {
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .toast {
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
 /* --- Settings Tab --- */
 .settings-container {
   padding: var(--space-md);
@@ -1209,7 +1164,7 @@
 }
 
 .settings-card-title {
-  font-size: var(--font-md);
+  font-size: var(--fs-md);
   font-weight: 700;
   margin: 0 0 var(--space-sm);
   color: var(--color-text);
@@ -1225,7 +1180,7 @@
 }
 
 .settings-radio-label input[type="radio"] {
-  accent-color: var(--color-primary);
+  accent-color: var(--color-accent);
   width: 18px;
   height: 18px;
 }
@@ -1263,7 +1218,7 @@
 }
 
 .settings-toggle-label input:checked + .toggle-switch {
-  background: var(--color-primary);
+  background: var(--color-accent);
 }
 
 .settings-toggle-label input:checked + .toggle-switch .toggle-knob {
@@ -1279,7 +1234,7 @@
   background: var(--color-surface-hover);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-sm);
-  font-size: var(--font-sm);
+  font-size: var(--fs-sm);
   color: var(--color-text-muted);
 }
 
@@ -1296,7 +1251,7 @@
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  font-size: var(--font-sm);
+  font-size: var(--fs-sm);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
@@ -1314,33 +1269,6 @@
 .settings-btn-danger:hover {
   background: var(--color-danger);
   color: white;
-}
-
-/* Dark mode settings overrides */
-[data-theme="dark"] .settings-card {
-  background: var(--color-surface);
-}
-
-[data-theme="dark"] .settings-card-title {
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .settings-radio-label {
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .settings-toggle-label {
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .export-status {
-  background: var(--color-surface-hover);
-  color: var(--color-text);
-}
-
-[data-theme="dark"] .settings-btn {
-  background: var(--color-surface-hover);
-  color: var(--color-text);
 }
 
 /* ============================================

@@ -1,9 +1,8 @@
-// DIY Eco-Friendly Cleaning Recipes - Traditional Japanese methods + modern eco recipes
+// DIY Eco-Friendly Cleaning Recipes
 const cleaningRecipes = [
     {
         id: "recipe_1",
         name: "Rice Water Counter Cleaner",
-        jpName: "米水クリーナー（よねず）",
         emoji: "🍚",
         ingredients: ["Starchy water from rinsing rice (before cooking)", "Clean cotton cloth or sponge"],
         steps: [
@@ -19,10 +18,9 @@ const cleaningRecipes = [
     },
     {
         id: "recipe_2",
-        name: "Vinegar Wiping Solution (Su-fuki)",
-        jpName: "酢拭き（すふき）",
+        name: "Vinegar Wiping Solution",
         emoji: "🧴",
-        ingredients: ["White vinegar (食酢) — 1 part", "Water — 1 part", "Soft cotton cloth"],
+        ingredients: ["White vinegar — 1 part", "Water — 1 part", "Soft cotton cloth"],
         steps: [
             "Mix equal parts white vinegar and water in a spray bottle.",
             "Spray onto glass surfaces, mirrors, countertops, or bathroom tiles.",
@@ -37,7 +35,6 @@ const cleaningRecipes = [
     {
         id: "recipe_3",
         name: "Used Tea Leaves Deodorizer",
-        jpName: "茶殻消臭（ちゃからしゅうしゅう）",
         emoji: "🍵",
         ingredients: ["Used green tea leaves (matcha or sencha work best)", "Small muslin bags or coffee filters"],
         steps: [
@@ -54,9 +51,8 @@ const cleaningRecipes = [
     {
         id: "recipe_4",
         name: "Charcoal Odor Absorber",
-        jpName: "木炭除湿（もくじんじゅうしつ）",
         emoji: "🪵",
-        ingredients: ["Activated charcoal or binchotan pieces (木炭)", "Muslin bags or mesh pouches"],
+        ingredients: ["Activated charcoal or binchotan pieces", "Muslin bags or mesh pouches"],
         steps: [
             "Break charcoal into small pieces (2-3 cm chunks).",
             "Place in breathable cloth bags (about 50g per bag).",
@@ -71,7 +67,6 @@ const cleaningRecipes = [
     {
         id: "recipe_5",
         name: "Citrus Peel Vinegar Cleaner",
-        jpName: "柑橘酢洗剤（きかんせいすざいじょう）",
         emoji: "🍊",
         ingredients: ["Orange, lemon, or yuzu peels (dried in sun for 2-3 days)", "White vinegar — enough to cover peels", "Glass jar with lid", "Spray bottle"],
         steps: [
@@ -89,9 +84,8 @@ const cleaningRecipes = [
     {
         id: "recipe_6",
         name: "Baking Soda Scrub Paste",
-        jpName: "重曹スクラブ（じゅうそう）",
         emoji: "🫧",
-        ingredients: ["Baking soda (重曹) — 3 tablespoons", "Water — enough to make a paste", "Old toothbrush or scrub sponge"],
+        ingredients: ["Baking soda — 3 tablespoons", "Water — enough to make a paste", "Old toothbrush or scrub sponge"],
         steps: [
             "Mix baking soda with small amounts of water until you get a thick paste.",
             "Apply directly to sinks, tubs, stovetops, or any stained surface.",
@@ -106,7 +100,6 @@ const cleaningRecipes = [
     {
         id: "recipe_7",
         name: "Rice Water Floor Wash",
-        jpName: "床用米水（ゆかようよねず）",
         emoji: "🧹",
         ingredients: ["Second-rinse water from washing rice (cloudy)", "Large bucket or mop basin"],
         steps: [
@@ -123,7 +116,6 @@ const cleaningRecipes = [
     {
         id: "recipe_8",
         name: "Volcanic Drain Cleaner",
-        jpName: "排水溝クリーナー（はいすいこう）",
         emoji: "🌋",
         ingredients: ["Baking soda — ½ cup", "White vinegar — 1 cup", "Boiling water — 1 cup"],
         steps: [
@@ -140,7 +132,6 @@ const cleaningRecipes = [
     {
         id: "recipe_9",
         name: "Green Tea Surface Polish",
-        jpName: "緑茶磨き（りょくちゃみがき）",
         emoji: "🍃",
         ingredients: ["Green tea bags (2-3) or loose leaf green tea", "Hot water — 1 cup", "Soft microfiber cloth"],
         steps: [
@@ -157,7 +148,6 @@ const cleaningRecipes = [
     {
         id: "recipe_10",
         name: "Salt & Vinegar Glass Cleaner",
-        jpName: "塩酢ガラス拭き（しおすガラスふき）",
         emoji: "🪟",
         ingredients: ["Sea salt or table salt — 2 tablespoons", "White vinegar — ½ cup", "Warm water — 1 cup", "Newspaper or microfiber cloth"],
         steps: [
@@ -174,7 +164,6 @@ const cleaningRecipes = [
     {
         id: "recipe_11",
         name: "Lemon Sun Bleach",
-        jpName: "レモン日光漂白（ひかりはくしょう）",
         emoji: "🍋",
         ingredients: ["Fresh lemon juice — ½ cup (about 2 lemons)", "Water — 1 cup", "Spray bottle"],
         steps: [
@@ -191,7 +180,6 @@ const cleaningRecipes = [
     {
         id: "recipe_12",
         name: "All-Purpose Castile Spray",
-        jpName: "キャスティルソープ多目的洗剤",
         emoji: "🧼",
         ingredients: ["Castile soap (liquid) — 2 tablespoons", "Warm water — 2 cups", "Optional: 5 drops lavender essential oil (cat-safe in tiny amounts)", "Spray bottle"],
         steps: [
@@ -208,9 +196,8 @@ const cleaningRecipes = [
     {
         id: "recipe_13",
         name: "Rice Bran Scrub Pad",
-        jpName: "米ぬか磨き（こめぬかがき）",
         emoji: "🌾",
-        ingredients: ["Rice bran (米糠・komenuka) — 2-3 tablespoons", "Warm water — enough to dampen", "Clean cloth or your hands"],
+        ingredients: ["Rice bran — 2-3 tablespoons", "Warm water — enough to dampen", "Clean cloth or your hands"],
         steps: [
             "Sprinkle rice bran onto a damp cloth or directly onto the surface.",
             "For pots and pans: rub rice bran directly on stained areas.",
@@ -225,7 +212,6 @@ const cleaningRecipes = [
     {
         id: "recipe_14",
         name: "Cat-Safe Carpet Freshener",
-        jpName: "猫安全カーペットリフレッシャー",
         emoji: "🐱",
         ingredients: ["Baking soda — ½ cup", "Dried lavender buds — 1 tablespoon (optional, minimal)", "Cornstarch — 2 tablespoons"],
         steps: [
