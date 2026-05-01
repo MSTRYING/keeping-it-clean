@@ -115,6 +115,13 @@
     for (const [k, v] of Object.entries(attrs)) r.setAttribute(k, v);
     return r;
   }
+  function svgCircle(cx, cy, r, attrs = {}) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+    for (const [k, v] of Object.entries(attrs)) c.setAttribute(k, v);
+    return c;
+  }
 
   // --- Icons ---
   function checkmarkSvg() {
