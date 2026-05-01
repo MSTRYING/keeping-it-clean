@@ -17,9 +17,11 @@
   let editingTaskId = null;
   let toastMessage = '';
   let toastVisible = false;
-  let scrollPositions = { checklist: 0, recipes: 0 };
+  let scrollPositions = { checklist: 0, recipes: 0, settings: 0 };
   let newTaskFreq = 'daily';
   let recipeSearchTerm = '';
+  let soundEnabled = loadSoundEnabled();
+  let justCheckedTaskId = null;
 
   // --- Timer State ---
   let activeTimer = null; // { taskId, startTime (ms), elapsed (ms) }
@@ -116,6 +118,19 @@
   function recipeTabIcon(active) {
     const sw = active ? '2.5' : '2';
     return svgIcon({ viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', width: '24', height: '24' }, [svgPath('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'), svgPolyline('14 2 14 8 20 8'), svgLine('16','13','8','13'), svgLine('16','17','8','17')]);
+  }
+  function settingsIcon(active) {
+    const sw = active ? '2.5' : '2';
+    return svgIcon({ viewBox: '0 0 24 24', width: '24', height: '24', fill: 'none', stroke: 'currentColor', 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+      svgCircle('12','12','3'),
+      svgPath('M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z')
+    ]);
+  }
+  function upArrowIcon() {
+    return svgIcon({ viewBox: '0 0 24 24', width: '14', height: '14', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [svgPolyline('18 15 12 9 6 15')]);
+  }
+  function downArrowIcon() {
+    return svgIcon({ viewBox: '0 0 24 24', width: '14', height: '14', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [svgPolyline('6 9 12 15 18 9')]);
   }
   function heartIcon(active) {
     return svgIcon({ viewBox: '0 0 24 24', width: '20', height: '20', stroke: active ? 'var(--color-danger)' : 'var(--color-text-light)', fill: active ? 'var(--color-danger)' : 'none', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [svgPath('M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.83l-1.06-1.22a5.5 5.5 0 0 0-7.78 7.78l1.06 1.22L12 21.29l7.78-7.78 1.06-1.22a5.5 5.5 0 0 0 0-7.78z')]);
@@ -271,8 +286,26 @@
 
   // --- Merge built-in + user tasks ---
   function getAllTasks() {
-    const userTasks = loadUserTasks();
+    let userTasks = loadUserTasks();
+    const order = loadUserTaskOrder();
+    if (order) {
+      userTasks = [...userTasks].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    }
     return [...cleaningTasks, ...userTasks];
+  }
+
+  // --- Reorder user tasks ---
+  function reorderUserTask(taskId, direction) {
+    const userTasks = loadUserTasks();
+    const idx = userTasks.findIndex(t => t.id === taskId);
+    if (idx < 0) return;
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === userTasks.length - 1) return;
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    [userTasks[idx], userTasks[newIdx]] = [userTasks[newIdx], userTasks[idx]];
+    _set('user-tasks', userTasks);
+    _set('user-task-order', userTasks.map(t => t.id));
+    render();
   }
 
   // --- Recipe Recommendation Engine ---
@@ -458,6 +491,183 @@
     return newUnlocks;
   }
 
+  // --- Sound Effects ---
+  function playCompletionSound() {
+    if (!soundEnabled) return;
+    try {
+      const ctx = new AudioContext();
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+      osc1.frequency.value = 523.25; // C5
+      osc2.frequency.value = 783.99; // G5
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc1.start(ctx.currentTime);
+      osc2.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.3);
+      osc2.stop(ctx.currentTime + 0.3);
+    } catch(e) {}
+  }
+
+  function playUncheckSound() {
+    if (!soundEnabled) return;
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(392, ctx.currentTime); // G4
+      osc.frequency.linearRampToValueAtTime(329.63, ctx.currentTime + 0.15); // E4
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch(e) {}
+  }
+
+  // --- Confetti Animation ---
+  function burstConfetti() {
+    const colors = ['#E8D5B7', '#C4A882', '#8B7355', '#F5F2EB', '#D4C5A9'];
+    const particles = [];
+    for (let i = 0; i < 20; i++) {
+      const p = el('div', {
+        class: 'confetti-particle',
+        style: `left: ${Math.random() * 100}vw; top: ${Math.random() * 50 + 25}vh; background: ${colors[i % colors.length]}; animation-delay: ${Math.random() * 0.3}s;`
+      });
+      document.body.appendChild(p);
+      particles.push(p);
+    }
+    setTimeout(() => particles.forEach(p => p.remove()), 1200);
+  }
+
+  // --- Targeted Progress Bar Update ---
+  function updateProgressBars() {
+    const taskState = loadTasks();
+    const allTasks = getAllTasks();
+
+    // Update frequency filter chip counts
+    if (activeFreqFilter === 'all') {
+      // Update all progress cards
+      const progressCards = $$('.progress-card');
+      for (const card of progressCards) {
+        const freqLabelEl = card.querySelector('.freq-label');
+        if (!freqLabelEl) continue;
+        const freqName = freqLabelEl.textContent;
+        const freqConfig = frequencies.find(f => f.label === freqName);
+        if (!freqConfig) continue;
+        const tasksForFreq = allTasks.filter(t => t.frequency === freqConfig.value);
+        const done = tasksForFreq.filter(t => taskState[t.id]?.completed).length;
+        const total = tasksForFreq.length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        const fill = card.querySelector('.progress-bar-fill');
+        const text = card.querySelector('.progress-text');
+        if (fill) fill.style.width = `${pct}%`;
+        if (text) {
+          text.textContent = pct === 100 ? '✓ All done!' : `${done} / ${total} done`;
+          text.classList.toggle('done', pct === 100);
+        }
+      }
+    } else {
+      // Update single progress card
+      const tasksForFreq = allTasks.filter(t => t.frequency === activeFreqFilter);
+      const done = tasksForFreq.filter(t => taskState[t.id]?.completed).length;
+      const total = tasksForFreq.length;
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      const fill = $('.progress-bar-fill');
+      const text = $('.progress-text');
+      if (fill) fill.style.width = `${pct}%`;
+      if (text) {
+        text.textContent = pct === 100 ? '✓ All done!' : `${done} / ${total} done`;
+        text.classList.toggle('done', pct === 100);
+      }
+    }
+
+    // Update freq chip counts
+    const chips = $$('.freq-chip');
+    for (const chip of chips) {
+      const text = chip.textContent;
+      const match = text.match(/^\w+(?: \w+)?\s*\((\d+)/);
+      if (match) {
+        // This is a freq chip with count
+        const freqName = text.replace(/\s*\(\d+\/\d+\)/, '').trim();
+        const freqConfig = frequencies.find(f => f.label === freqName);
+        if (freqConfig) {
+          const tasksForFreq = allTasks.filter(t => t.frequency === freqConfig.value);
+          const done = tasksForFreq.filter(t => taskState[t.id]?.completed).length;
+          const total = tasksForFreq.length;
+          chip.textContent = `${freqName} (${done}/${total})`;
+        }
+      }
+    }
+  }
+
+  // --- Toggle Task (targeted update, no full render) ---
+  function toggleTask(taskId) {
+    const taskState = loadTasks();
+    const isCompleted = taskState[taskId]?.completed || false;
+    const newCompleted = !isCompleted;
+    saveTaskState(taskId, { completed: newCompleted });
+
+    // Update streak + calendar
+    updateStreak();
+    const allTasks = getAllTasks();
+    const done = allTasks.filter(t => loadTasks()[t.id]?.completed).length;
+    recordCalendarDay(today(), done, allTasks.length);
+
+    // Sound
+    if (newCompleted) {
+      playCompletionSound();
+      showToast(`${taskState[taskId] ? '' : ''}${getAllTasks().find(t => t.id === taskId)?.icon || '✓'} ${getAllTasks().find(t => t.id === taskId)?.name || ''} ✓`);
+      checkAchievements();
+    } else {
+      playUncheckSound();
+    }
+
+    // Update the task item DOM directly
+    const taskItem = $(`.task-item[data-task-id="${taskId}"]`);
+    if (taskItem) {
+      taskItem.classList.toggle('completed', newCompleted);
+      taskItem.setAttribute('aria-checked', newCompleted);
+      const checkbox = taskItem.querySelector('.task-checkbox');
+      if (checkbox) checkbox.classList.toggle('checked', newCompleted);
+
+      // Trigger animation
+      justCheckedTaskId = taskId;
+      taskItem.classList.add('just-checked');
+      requestAnimationFrame(() => {
+        if (taskItem) taskItem.classList.remove('just-checked');
+      });
+    }
+
+    // Update progress bars
+    updateProgressBars();
+
+    // Update streak display
+    const streak = loadStreak();
+    const currentStreakEl = $('.streak-number');
+    if (currentStreakEl) currentStreakEl.textContent = String(streak.current);
+    const bestStreakEl = $('.streak-card .streak-stat:last-child .streak-number');
+    if (bestStreakEl) bestStreakEl.textContent = String(streak.best);
+
+    // Check if current frequency group is fully done → confetti
+    if (newCompleted) {
+      const freq = activeFreqFilter === 'all' ? null : activeFreqFilter;
+      const tasksToCheck = freq ? allTasks.filter(t => t.frequency === freq) : allTasks;
+      const allDone = tasksToCheck.every(t => loadTasks()[t.id]?.completed);
+      if (allDone && tasksToCheck.length > 0) {
+        burstConfetti();
+      }
+    }
+  }
+
   // --- Render Achievements Section ---
   function renderAchievements() {
     const unlocked = loadAchievements();
@@ -617,19 +827,9 @@
           role: 'checkbox',
           'aria-checked': isCompleted,
           'aria-label': task.name + (isCompleted ? ' (completed)' : ' (not completed)'),
+          'data-task-id': task.id,
         onClick: () => {
-            const newCompleted = !isCompleted;
-            saveTaskState(task.id, { completed: newCompleted });
-            // Update streak + calendar on check or uncheck
-            updateStreak();
-            const allT = getAllTasks();
-            const done = allT.filter(t => loadTasks()[t.id]?.completed).length;
-            recordCalendarDay(today(), done, allT.length);
-            if (newCompleted) {
-                showToast(`${task.icon} ${task.name} ✓`);
-                checkAchievements();
-            }
-            render();
+            toggleTask(task.id);
         }
         });
 
@@ -694,6 +894,24 @@
             }
           }, [trashIcon()]));
           item.appendChild(actions);
+
+          // Reorder buttons
+          const userTasks = loadUserTasks();
+          const taskIdx = userTasks.findIndex(t => t.id === task.id);
+          const reorderDiv = el('div', { class: 'task-reorder' });
+          reorderDiv.appendChild(el('button', {
+            class: 'reorder-btn',
+            title: 'Move up',
+            disabled: taskIdx === 0,
+            onClick: (e) => { e.stopPropagation(); reorderUserTask(task.id, 'up'); }
+          }, [upArrowIcon()]));
+          reorderDiv.appendChild(el('button', {
+            class: 'reorder-btn',
+            title: 'Move down',
+            disabled: taskIdx === userTasks.length - 1,
+            onClick: (e) => { e.stopPropagation(); reorderUserTask(task.id, 'down'); }
+          }, [downArrowIcon()]));
+          item.appendChild(reorderDiv);
         }
 
         group.appendChild(item);
@@ -961,11 +1179,118 @@
     return container;
   }
 
+  // --- Dark Mode ---
+  function setDarkMode(pref) {
+    saveDarkMode(pref);
+    const isDark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', pref === 'auto' ? (isDark ? 'dark' : 'light') : pref);
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) themeColorMeta.content = isDark ? '#1a1a2e' : '#F5F2EB';
+  }
+
+  // --- Settings Tab ---
+  function renderSettings() {
+    const container = el('div', { class: 'settings-container', id: 'panel-settings', role: 'tabpanel', 'aria-labelledby': 'tab-settings' });
+
+    // Dark Mode Card
+    const darkModeCard = el('div', { class: 'settings-card' });
+    darkModeCard.appendChild(el('h3', { class: 'settings-card-title' }, ['Dark Mode']));
+    const darkModePrefs = ['light', 'dark', 'auto'];
+    const darkModeLabels = { light: 'Light', dark: 'Dark', auto: 'Follow System' };
+    const currentDarkMode = loadDarkMode();
+    for (const pref of darkModePrefs) {
+      const radio = el('input', { type: 'radio', name: 'dark-mode', value: pref, checked: currentDarkMode === pref });
+      const label = el('label', { class: 'settings-radio-label' }, [radio, el('span', {}, [darkModeLabels[pref]])]);
+      radio.addEventListener('change', () => {
+        setDarkMode(pref);
+        render();
+      });
+      darkModeCard.appendChild(label);
+    }
+
+    // Sound Card
+    const soundCard = el('div', { class: 'settings-card' });
+    soundCard.appendChild(el('h3', { class: 'settings-card-title' }, ['Sound Effects']));
+    const soundToggle = el('label', { class: 'settings-toggle-label' });
+    const soundCheckbox = el('input', { type: 'checkbox', checked: soundEnabled });
+    soundCheckbox.addEventListener('change', () => {
+      soundEnabled = soundCheckbox.checked;
+      saveSoundEnabled(soundEnabled);
+    });
+    soundToggle.appendChild(soundCheckbox);
+    soundToggle.appendChild(el('span', { class: 'toggle-switch' }, [el('span', { class: 'toggle-knob' })]));
+    soundToggle.appendChild(el('span', { class: 'settings-toggle-text' }, ['Enable completion sounds']));
+    soundCard.appendChild(soundToggle);
+
+    // Data Sync Card
+    const dataCard = el('div', { class: 'settings-card' });
+    dataCard.appendChild(el('h3', { class: 'settings-card-title' }, ['Data & Sync']));
+    const lastExport = loadLastExport();
+    let exportText = 'Never exported';
+    let exportClass = 'export-status overdue';
+    if (lastExport) {
+      const daysAgo = Math.floor((Date.now() - Number(lastExport)) / 86400000);
+      if (daysAgo === 0) exportText = 'Exported today';
+      else if (daysAgo === 1) exportText = 'Exported yesterday';
+      else if (daysAgo < 7) exportText = `Exported ${daysAgo} days ago`;
+      else { exportText = `⚠️ ${daysAgo} days since last export`; exportClass = 'export-status overdue'; }
+    }
+    dataCard.appendChild(el('div', { class: exportClass }, [exportText]));
+
+    // Export button
+    const exportBtn = el('button', { class: 'settings-btn', onClick: () => {
+      const data = exportAllData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `keeping-it-clean-${today()}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      showToast('📦 Data exported');
+    }}, ['Export Data']);
+    dataCard.appendChild(exportBtn);
+
+    // Import button
+    const importBtn = el('button', { class: 'settings-btn', onClick: () => {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = '.json';
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (importAllData(data)) { showToast('📥 Data imported'); render(); }
+            else { showToast('❌ Invalid file'); }
+          } catch(err) { showToast('❌ Failed to parse file'); }
+        };
+        reader.readAsText(file);
+      });
+      input.click();
+    }}, ['Import Data']);
+    dataCard.appendChild(importBtn);
+
+    // Reset button
+    const resetBtn = el('button', { class: 'settings-btn settings-btn-danger', onClick: async () => {
+      if (await showConfirm('Reset all data? This cannot be undone.')) {
+        localStorage.clear();
+        location.reload();
+      }
+    }}, ['Reset All Data']);
+    dataCard.appendChild(resetBtn);
+
+    container.appendChild(darkModeCard);
+    container.appendChild(soundCard);
+    container.appendChild(dataCard);
+    return container;
+  }
+
   // --- Tab Bar ---
   function renderTabBar() {
     return el('nav', { class: 'tab-bar', role: 'tablist', 'aria-label': 'Main navigation' }, [
       el('button', { class: ['tab-item', { active: activeTab === 'checklist' }], role: 'tab', 'aria-selected': activeTab === 'checklist', 'aria-controls': 'panel-checklist', id: 'tab-checklist', onClick: () => { scrollPositions[activeTab] = window.scrollY; activeTab = 'checklist'; render(); requestAnimationFrame(() => window.scrollTo(0, scrollPositions.checklist)); } }, [checklistTabIcon(activeTab === 'checklist'), el('span', {}, ['Tasks'])]),
-      el('button', { class: ['tab-item', { active: activeTab === 'recipes' }], role: 'tab', 'aria-selected': activeTab === 'recipes', 'aria-controls': 'panel-recipes', id: 'tab-recipes', onClick: () => { scrollPositions[activeTab] = window.scrollY; activeTab = 'recipes'; render(); requestAnimationFrame(() => window.scrollTo(0, scrollPositions.recipes)); } }, [recipeTabIcon(activeTab === 'recipes'), el('span', {}, ['Recipes'])])
+      el('button', { class: ['tab-item', { active: activeTab === 'recipes' }], role: 'tab', 'aria-selected': activeTab === 'recipes', 'aria-controls': 'panel-recipes', id: 'tab-recipes', onClick: () => { scrollPositions[activeTab] = window.scrollY; activeTab = 'recipes'; render(); requestAnimationFrame(() => window.scrollTo(0, scrollPositions.recipes)); } }, [recipeTabIcon(activeTab === 'recipes'), el('span', {}, ['Recipes'])]),
+      el('button', { class: ['tab-item', { active: activeTab === 'settings' }], role: 'tab', 'aria-selected': activeTab === 'settings', 'aria-controls': 'panel-settings', id: 'tab-settings', onClick: () => { scrollPositions[activeTab] = window.scrollY; activeTab = 'settings'; render(); requestAnimationFrame(() => window.scrollTo(0, scrollPositions.settings)); } }, [settingsIcon(activeTab === 'settings'), el('span', {}, ['Settings'])])
     ]);
   }
 
@@ -982,7 +1307,8 @@
     requestAnimationFrame(() => {
       const frag = document.createDocumentFragment();
       if (activeTab === 'checklist') frag.appendChild(renderChecklist());
-      else frag.appendChild(renderRecipes());
+      else if (activeTab === 'recipes') frag.appendChild(renderRecipes());
+      else frag.appendChild(renderSettings());
       frag.appendChild(renderTabBar());
       const toast = renderToast();
       if (toast) frag.appendChild(toast);
@@ -1026,6 +1352,13 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
       updateThemeColor();
     });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
 
     render();
   }

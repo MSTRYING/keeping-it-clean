@@ -54,7 +54,21 @@ function resetTodayTasks(dailyTaskIds) {
 function loadUserTasks() {
   const raw = _get('user-tasks');
   if (!raw) return [];
-  try { return JSON.parse(raw); } catch(e) { return []; }
+  try {
+    const tasks = JSON.parse(raw);
+    const order = loadUserTaskOrder();
+    if (order && Array.isArray(tasks)) {
+      tasks.sort((a, b) => {
+        const ai = order.indexOf(a.id);
+        const bi = order.indexOf(b.id);
+        if (ai === -1 && bi === -1) return 0;
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+    }
+    return tasks;
+  } catch(e) { return []; }
 }
 
 function saveUserTask(task) {
@@ -66,12 +80,16 @@ function saveUserTask(task) {
     tasks.push(task);
   }
   _set('user-tasks', tasks);
+  _set('user-task-order', tasks.map(t => t.id));
+  // Update order to match
+  _set('user-task-order', tasks.map(t => t.id));
 }
 
 function deleteUserTask(id) {
   let tasks = loadUserTasks();
   tasks = tasks.filter(t => t.id !== id);
   _set('user-tasks', tasks);
+  _set('user-task-order', tasks.map(t => t.id));
 }
 
 function updateUserTask(id, updates) {
@@ -81,6 +99,17 @@ function updateUserTask(id, updates) {
     tasks[idx] = { ...tasks[idx], ...updates };
     _set('user-tasks', tasks);
   }
+}
+
+// --- User Task Order ---
+function loadUserTaskOrder() {
+  const raw = _get('user-task-order');
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch(e) { return null; }
+}
+
+function saveUserTaskOrder(order) {
+  _set('user-task-order', order);
 }
 
 // --- Custom Recipes ---
@@ -202,6 +231,15 @@ function unlockAchievement(id) {
   return false;
 }
 
+// --- Last Export Tracking ---
+function loadLastExport() {
+  try { return localStorage.getItem(PREFIX + 'last-export'); } catch(e) { return null; }
+}
+
+function saveLastExport(ts) {
+  try { localStorage.setItem(PREFIX + 'last-export', String(ts)); } catch(e) {}
+}
+
 // --- Dark Mode Preference ---
 function loadDarkMode() {
   const raw = _get('dark-mode');
@@ -228,6 +266,7 @@ function saveSoundEnabled(val) {
 const EXPORT_VERSION = 2;
 
 function exportAllData() {
+  saveLastExport(Date.now());
   return {
     version: EXPORT_VERSION,
     exported: new Date().toISOString(),
@@ -255,7 +294,7 @@ function importAllData(data) {
   if (!data || !data.version) return false;
   if (!Array.isArray(data.tasks) || typeof data.calendar !== 'object') return false;
   data = migrateImport(data);
-  if (!confirm('Import data? This will overwrite your current data.')) return false;
+  // Note: confirm() is used here since this is called from app.js which handles the modal
   if (data.tasks) _set('tasks', data.tasks);
   if (data.userTasks) _set('user-tasks', data.userTasks);
   if (data.customRecipes) _set('custom-recipes', data.customRecipes);
@@ -265,5 +304,6 @@ function importAllData(data) {
   if (data.achievements) _set('achievements', data.achievements);
   if (data.darkMode !== undefined) _set('dark-mode', data.darkMode);
   if (data.sound !== undefined) _set('sound', data.sound);
+  if (data.userTaskOrder) _set('user-task-order', data.userTaskOrder);
   return true;
 }
