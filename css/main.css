@@ -1287,6 +1287,83 @@ body:has(.modal-overlay) { overflow: hidden; }
 }
 
 /* ============================================
+   RESPONSIVE — Small mobile
+   ============================================ */
+@media (max-width: 400px) {
+  .task-item {
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  .task-checkbox {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .task-checkbox svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .task-icon {
+    width: 24px;
+    font-size: var(--fs-md);
+  }
+
+  .task-name {
+    font-size: 0.875rem;
+  }
+
+  .freq-badge {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    letter-spacing: 0.02em;
+  }
+
+  .task-timer-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .task-timer-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .task-recipe-link {
+    font-size: 0;
+    padding: 4px;
+    gap: 0;
+  }
+
+  .task-recipe-link svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .task-actions {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .task-action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .task-action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* ============================================
    RESPONSIVE — Tablet & Desktop
    ============================================ */
 @media (min-width: 640px) {
