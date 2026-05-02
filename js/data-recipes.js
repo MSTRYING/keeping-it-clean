@@ -14,7 +14,7 @@ const cleaningRecipes = [
         ],
         tags: ["multi-purpose", "cat-safe", "kitchen", "counters"],
         isPetSafe: true,
-        note: "Traditional Japanese method — the natural starch acts as a mild abrasive and deodorizer. Zero waste since you're using water that would otherwise be discarded."
+        note: "Traditional method — the natural starch acts as a mild abrasive and deodorizer. Zero waste since you're using water that would otherwise be discarded."
     },
     {
         id: "recipe_2",
@@ -30,7 +30,7 @@ const cleaningRecipes = [
         ],
         tags: ["multi-purpose", "cat-safe", "glass", "bathroom", "kitchen"],
         isPetSafe: true,
-        note: "Su-fuki (酢拭き) has been used in Japanese homes for centuries. Vinegar kills 99% of bacteria naturally. Safe around cats once fully dried — the acetic acid evaporates."
+        note: "Su-fuki has been used in homes for centuries. Vinegar kills 99% of bacteria naturally. Safe around cats once fully dried — the acetic acid evaporates."
     },
     {
         id: "recipe_3",
@@ -46,7 +46,7 @@ const cleaningRecipes = [
         ],
         tags: ["deodorizer", "cat-safe", "closet", "fridge", "zero-waste"],
         isPetSafe: true,
-        note: "Chakara (茶殻) has been used in Japan for centuries to absorb odors. Green tea's tannins neutralize smells rather than masking them. Completely safe around cats."
+        note: "Chakara has been used for centuries to absorb odors. Green tea's tannins neutralize smells rather than masking them. Completely safe around cats."
     },
     {
         id: "recipe_4",
@@ -62,7 +62,7 @@ const cleaningRecipes = [
         ],
         tags: ["deodorizer", "cat-safe", "moisture-control", "bathroom", "closet"],
         isPetSafe: true,
-        note: "Mokuzen (木炭) is a cornerstone of Japanese home care. Binchotan charcoal absorbs moisture and odors naturally. It also releases negative ions for fresher air."
+        note: "Mokuzen is a cornerstone of home care. Binchotan charcoal absorbs moisture and odors naturally. It also releases negative ions for fresher air."
     },
     {
         id: "recipe_5",
@@ -79,7 +79,7 @@ const cleaningRecipes = [
         ],
         tags: ["multi-purpose", "cat-safe", "kitchen", "grease-cutter"],
         isPetSafe: true,
-        note: "When diluted properly, citrus cleaners are safe around cats. The essential oils in peels cut grease naturally. Yuzu (柚子) peel is especially prized in Japanese cleaning traditions."
+        note: "When diluted properly, citrus cleaners are safe around cats. The essential oils in peels cut grease naturally. Yuzu peel is especially prized in cleaning traditions."
     },
     {
         id: "recipe_6",
@@ -95,7 +95,7 @@ const cleaningRecipes = [
         ],
         tags: ["scrub", "cat-safe", "bathroom", "kitchen", "stain-remover"],
         isPetSafe: true,
-        note: "Juu-so (重曹) is a household staple in Japan. Baking soda is mildly abrasive without scratching surfaces and completely non-toxic. Safe for cats even during application."
+        note: "Juu-so is a household staple. Baking soda is mildly abrasive without scratching surfaces and completely non-toxic. Safe for cats even during application."
     },
     {
         id: "recipe_7",
@@ -111,7 +111,7 @@ const cleaningRecipes = [
         ],
         tags: ["floors", "cat-safe", "tile", "zero-waste"],
         isPetSafe: true,
-        note: "A traditional Japanese floor care method. The rice starch creates a gentle natural polish on tile floors. Completely safe for cats to walk on once dry."
+        note: "A traditional floor care method. The rice starch creates a gentle natural polish on tile floors. Completely safe for cats to walk on once dry."
     },
     {
         id: "recipe_8",
@@ -143,7 +143,7 @@ const cleaningRecipes = [
         ],
         tags: ["multi-purpose", "cat-safe", "wood-furniture", "polish"],
         isPetSafe: true,
-        note: "Ryokucha-maki (緑茶磨き) uses tea tannins as a natural cleaner. Green tea has antioxidant properties that help preserve wood finishes. Completely safe around cats."
+        note: "Ryokucha-maki uses tea tannins as a natural cleaner. Green tea has antioxidant properties that help preserve wood finishes. Completely safe around cats."
     },
     {
         id: "recipe_10",
@@ -159,7 +159,7 @@ const cleaningRecipes = [
         ],
         tags: ["glass", "cat-safe", "windows", "mirrors"],
         isPetSafe: true,
-        note: "A time-tested Japanese combination. Salt provides gentle abrasion while vinegar dissolves grime. Using newspaper for polishing glass is a traditional technique still used by Japanese window cleaners."
+        note: "A time-tested combination. Salt provides gentle abrasion while vinegar dissolves grime. Using newspaper for polishing glass is a traditional technique still used by window cleaners."
     },
     {
         id: "recipe_11",
@@ -207,7 +207,7 @@ const cleaningRecipes = [
         ],
         tags: ["scrub", "cat-safe", "kitchen", "pots-pans"],
         isPetSafe: true,
-        note: "Okomi-nuka-maki (米ぬか磨き) is a centuries-old Japanese cleaning method. Rice bran contains natural oils that help dissolve grease while its texture provides gentle scrubbing power."
+        note: "Okomi-nuka-maki is a centuries-old cleaning method. Rice bran contains natural oils that help dissolve grease while its texture provides gentle scrubbing power."
     },
     {
         id: "recipe_14",
@@ -228,7 +228,6 @@ const cleaningRecipes = [
     {
         id: "recipe_15",
         name: "Shoji-Style Wood Cleaner",
-        jpName: "障子木部洗剤（しょうじもくぶ）",
         emoji: "🏠",
         ingredients: ["Mild dish soap (plant-based) — 1 teaspoon", "Warm water — 2 cups", "Soft natural bristle brush or cloth"],
         steps: [
@@ -240,7 +239,7 @@ const cleaningRecipes = [
         ],
         tags: ["wood-furniture", "cat-safe", "multi-purpose"],
         isPetSafe: true,
-        note: "Inspired by traditional Japanese shoji screen care. The key is using minimal water and drying immediately — this preserves wood finishes and prevents warping."
+        note: "Inspired by traditional shoji screen care. The key is using minimal water and drying immediately — this preserves wood finishes and prevents warping."
     }
 ];
 

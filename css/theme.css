@@ -1,7 +1,6 @@
 /* ============================================
    THEME — Wabi-Sabi Editorial Palette
-   Inspired by Japanese lifestyle publishing:
-   warm paper tones, ink-wash accents,
+   Warm paper tones, ink-wash accents,
    the quiet confidence of crafted objects.
    ============================================ */
 
@@ -47,7 +46,7 @@
   --shadow-modal: 0 20px 60px rgba(44, 40, 36, 0.15), 0 4px 12px rgba(44, 40, 36, 0.1);
 
   /* --- Typography Scale --- */
-  --fs-xs: 0.8rem;
+  --fs-xs: 0.72rem;
   --fs-sm: 0.78rem;
   --fs-base: 0.88rem;
   --fs-md: 1rem;
@@ -81,6 +80,10 @@
   /* --- Layout --- */
   --content-max-width: 520px;
   --tab-bar-height: 64px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
 }
 
 /* ============================================

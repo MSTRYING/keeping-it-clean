@@ -81,8 +81,6 @@ function saveUserTask(task) {
   }
   _set('user-tasks', tasks);
   _set('user-task-order', tasks.map(t => t.id));
-  // Update order to match
-  _set('user-task-order', tasks.map(t => t.id));
 }
 
 function deleteUserTask(id) {
@@ -292,7 +290,8 @@ function migrateImport(data) {
 
 function importAllData(data) {
   if (!data || !data.version) return false;
-  if (!Array.isArray(data.tasks) || typeof data.calendar !== 'object') return false;
+  if (typeof data.tasks !== 'object' || data.tasks === null || Array.isArray(data.tasks)) return false;
+  if (typeof data.calendar !== 'object' || data.calendar === null) return false;
   data = migrateImport(data);
   // Note: confirm() is used here since this is called from app.js which handles the modal
   if (data.tasks) _set('tasks', data.tasks);

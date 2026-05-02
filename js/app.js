@@ -292,8 +292,8 @@
           if (tasks[task.id]) {
             tasks[task.id].completed = false;
             tasks[task.id].completedDate = null;
+            saveTaskState(task.id, tasks[task.id]);
           }
-          saveTaskState(task.id, tasks[task.id]);
         }
       }
     }
@@ -641,7 +641,8 @@
     // Sound
     if (newCompleted) {
       playCompletionSound();
-      showToast(`${taskState[taskId] ? '' : ''}${getAllTasks().find(t => t.id === taskId)?.icon || '✓'} ${getAllTasks().find(t => t.id === taskId)?.name || ''} ✓`);
+      const foundTask = getAllTasks().find(t => t.id === taskId);
+      showToast(`${foundTask?.icon || '✓'} ${foundTask?.name || ''} ✓`);
       checkAchievements();
     } else {
       playUncheckSound();
@@ -668,7 +669,7 @@
 
     // Update streak display
     const streak = loadStreak();
-    const currentStreakEl = $('.streak-number');
+    const currentStreakEl = $('.streak-card .streak-stat:first-child .streak-number');
     if (currentStreakEl) currentStreakEl.textContent = String(streak.current);
     const bestStreakEl = $('.streak-card .streak-stat:last-child .streak-number');
     if (bestStreakEl) bestStreakEl.textContent = String(streak.best);
@@ -707,9 +708,9 @@
     return section;
   }
 
-   // --- Checklist Tab ---
+    // Checklist Tab
   function renderChecklist() {
-    const container = el('div', { class: 'checklist-tab' });
+    const container = el('div', { class: 'checklist-tab', id: 'panel-checklist', role: 'tabpanel', 'aria-labelledby': 'tab-checklist' });
     const allTasks = getAllTasks();
     const taskState = loadTasks();
 
@@ -844,8 +845,12 @@
           'aria-checked': isCompleted,
           'aria-label': task.name + (isCompleted ? ' (completed)' : ' (not completed)'),
           'data-task-id': task.id,
+          tabindex: '0',
         onClick: () => {
             toggleTask(task.id);
+        },
+        onKeyDown: (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTask(task.id); }
         }
         });
 
@@ -1063,7 +1068,7 @@
 
   // --- Recipes Tab ---
   function renderRecipes() {
-    const container = el('div', { class: 'recipes-tab' });
+    const container = el('div', { class: 'recipes-tab', id: 'panel-recipes', role: 'tabpanel', 'aria-labelledby': 'tab-recipes' });
     container.appendChild(el('header', { class: 'app-header' }, [
       el('h1', {}, ['DIY Recipes']),
       el('p', { class: 'subtitle' }, ['Eco-Friendly DIY Cleaners'])
@@ -1162,7 +1167,6 @@
       sheet.appendChild(el('h2', { class: 'modal-title' }, ['Add Custom Recipe']));
       const fields = [
         { key: 'crName', label: 'Recipe Name', type: 'text', required: true },
-        { key: 'crJpName', label: 'Japanese Name (optional)', type: 'text' },
         { key: 'crEmoji', label: 'Emoji Icon', type: 'text', placeholder: '🧴' },
         { key: 'crIngredients', label: 'Ingredients (one per line)', type: 'textarea', required: true },
         { key: 'crSteps', label: 'Steps (one per line)', type: 'textarea', required: true },
@@ -1183,7 +1187,7 @@
         const ingredients = ($('#crIngredients')?.value || '').trim();
         const steps = ($('#crSteps')?.value || '').trim();
         if (!name || !ingredients || !steps) { const err = $('#crError'); if (err) err.textContent = 'Please fill in name, ingredients, and steps.'; return; }
-        const recipe = { id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), name, jpName: ($('#crJpName')?.value || '').trim() || '', emoji: ($('#crEmoji')?.value || '').trim() || '🧴', ingredients: ingredients.split('\n').map(s => s.trim()).filter(Boolean), steps: steps.split('\n').map(s => s.trim()).filter(Boolean), note: ($('#crNote')?.value || '').trim() || '', tags: ($('#crTags')?.value || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean), isPetSafe: true };
+        const recipe = { id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), name, emoji: ($('#crEmoji')?.value || '').trim() || '🧴', ingredients: ingredients.split('\n').map(s => s.trim()).filter(Boolean), steps: steps.split('\n').map(s => s.trim()).filter(Boolean), note: ($('#crNote')?.value || '').trim() || '', tags: ($('#crTags')?.value || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean), isPetSafe: true };
         saveCustomRecipe(recipe); showCustomRecipeModal = false; showToast(`${recipe.emoji} Recipe added!`); render();
       } }, ['Save Recipe']));
       sheet.appendChild(el('button', { class: 'btn-secondary', onClick: () => { showCustomRecipeModal = false; render(); } }, ['Cancel']));

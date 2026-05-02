@@ -1,14 +1,14 @@
 {
-  "name": "Keeping it Clean · 片づけ",
-  "short_name": "Katazuke",
+  "name": "Keeping it Clean",
+  "short_name": "Keep Clean",
   "description": "Household cleaning checklist and eco-friendly DIY recipes",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F5F2EB",
   "theme_color": "#F5F2EB",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦙</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧹</text></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml"
     }

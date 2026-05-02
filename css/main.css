@@ -1,6 +1,6 @@
 /* ============================================
    MAIN STYLES — Component Layouts
-   "Keeping it Clean" · 片付け Katazuke
+   "Keeping it Clean"
    ============================================ */
 
 /* --- Reset --- */
@@ -166,7 +166,6 @@ body:has(.modal-overlay) { overflow: hidden; }
 }
 
 /* Frequency-based left borders */
-.task-item .freq-badge.daily ~ *::before,
 .task-item:has(.freq-badge.daily)::before { background: var(--color-freq-daily); }
 .task-item:has(.freq-badge.weekly)::before { background: var(--color-freq-weekly); }
 .task-item:has(.freq-badge.bi-weekly)::before { background: var(--color-freq-bi-weekly); }
@@ -531,12 +530,6 @@ body:has(.modal-overlay) { overflow: hidden; }
   font-weight: 600;
   color: var(--color-text);
   line-height: 1.3;
-}
-
-.recipe-jp-name {
-  font-size: var(--fs-xs);
-  color: var(--color-text-muted);
-  margin-top: 2px;
 }
 
 /* Favorite Button */
